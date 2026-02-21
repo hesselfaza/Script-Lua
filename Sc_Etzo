@@ -1,9 +1,13 @@
 -- ====================================================================
--- ETZO STORE - HEADLESS AUTO FISH V1.5 (LIVE COUNTER DASHBOARD)
+-- ETZO STORE - HEADLESS AUTO FISH V1.8 (ABSOLUTE BACKPACK SCANNER)
 -- ====================================================================
 local WEBHOOK_URL = "PASTE_URL_WEBHOOK_DISCORD_DISINI"
 local AUTO_SELL = true
 local SELL_INTERVAL = 60
+
+-- 🗿 KONFIGURASI AUTO TOTEM
+local AUTO_TOTEM = true
+local TOTEM_INTERVAL = 180  -- Waktu (detik) pasang ulang Totem (180 = 3 menit)
 
 local TARGET_FISH = {
     ["Golden Megalodon"] = true,
@@ -38,7 +42,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO STORE - MEMUAT MESIN PANCING...\n(Menunggu Jaringan Game Terunduh)"
+label.Text = "ETZO STORE - MEMUAT MESIN PANCING..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -78,8 +82,8 @@ task.spawn(function()
         local SellAll      = net:WaitForChild("RF/SellAllItems", 10)
         local ObtainedNewFish = net:WaitForChild("RE/ObtainedNewFishNotification", 10)
 
-        -- 📡 SISTEM WEBHOOK & PENGHITUNG IKAN (LIVE COUNTER)
-        local totalCaught = 0 -- Variabel penghitung ikan
+        -- 📡 SISTEM WEBHOOK & PENGHITUNG IKAN
+        local totalCaught = 0
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         local RARITY_MAP = {
             [1] = {Name = "Common", Color = 0x9e9e9e},
@@ -128,13 +132,12 @@ task.spawn(function()
             end
         end
 
-        -- KETIKA IKAN BERHASIL DITANGKAP
         ObtainedNewFish.OnClientEvent:Connect(function(_, weightData, wrapper)
             if not wrapper or not wrapper.InventoryItem then return end
             
-            -- Tambah penghitung dan update layar hitam
             totalCaught = totalCaught + 1
-            label.Text = string.format("ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n\n🐟 Total Ikan Ditangkap: %d", totalCaught)
+            local totemStatus = AUTO_TOTEM and "ON (Scanner)" or "OFF"
+            label.Text = string.format("ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: %d", totemStatus, totalCaught)
 
             local item = wrapper.InventoryItem
             if not item.Id then return end
@@ -155,24 +158,75 @@ task.spawn(function()
             end)
         end
 
-        -- 🎣 FISHING LOGIC (LEGIT / AUTO SHAKE)
+        -- 🎣 FISHING & BACKPACK SCANNER LOGIC
+        local lastTotemPlace = 0
+
         local function startFarming()
             pcall(function() CancelInput:InvokeServer() end)
             task.wait(1)
             
             while isFarming do
+                -- 🗿 1. ABSOLUTE BACKPACK SCANNER (Mencari Totem di mana pun ia sembunyi)
+                if AUTO_TOTEM and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
+                    local char = LocalPlayer.Character
+                    local backpack = LocalPlayer:FindFirstChild("Backpack")
+                    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+                    
+                    if char and backpack and humanoid then
+                        local totemTool = nil
+                        
+                        -- Cek apakah Totem sudah dipegang
+                        for _, item in ipairs(char:GetChildren()) do
+                            if item:IsA("Tool") and string.find(item.Name, "Totem") then
+                                totemTool = item
+                                break
+                            end
+                        end
+                        
+                        -- Jika belum dipegang, bongkar Backpack (Tas)
+                        if not totemTool then
+                            for _, item in ipairs(backpack:GetChildren()) do
+                                if item:IsA("Tool") and string.find(item.Name, "Totem") then
+                                    totemTool = item
+                                    break
+                                end
+                            end
+                        end
+                        
+                        -- Jika ditemukan (entah di tangan atau tas), pasang paksa
+                        if totemTool then
+                            humanoid:EquipTool(totemTool)
+                            task.wait(0.5)
+                            
+                            VirtualUser:CaptureController()
+                            VirtualUser:ClickButton1(Vector2.new(500, 500))
+                            task.wait(1)
+                            
+                            lastTotemPlace = os.time()
+                            print("[ETZO] Totem berhasil digali dari Tas dan dipasang!")
+                        else
+                            print("[ETZO] Totem tidak ditemukan. Apakah stok habis?")
+                        end
+                    end
+                end
+
+                -- 🎣 2. KEMBALI MEMANCING
+                -- Panggil Pancingan kembali dari kotak 1
                 local currentArgs = {-1.233, 1, workspace:GetServerTimeNow()}
-                pcall(function() EquipTool:FireServer(1) end)
+                pcall(function() EquipTool:FireServer(1) end) 
                 task.wait(0.2)
+                
                 task.spawn(function() pcall(function() ChargeRod:InvokeServer() end) end)
                 task.wait(0.1)
                 task.spawn(function() pcall(function() RequestGame:InvokeServer(unpack(currentArgs)) end) end)
+                
                 task.wait(1.5)
                 for i = 1, 20 do
                     if not isFarming then break end
                     pcall(function() CompleteGame:FireServer() end)
                     task.wait(0.1)
                 end
+                
                 pcall(function() CancelInput:FireServer() end)
                 task.wait(0.8)
             end
@@ -180,10 +234,9 @@ task.spawn(function()
 
         task.spawn(startFarming)
         
-        -- UBAH UI JADI HIJAU SAAT PERTAMA JALAN
-        label.Text = "ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n\n🐟 Total Ikan Ditangkap: 0"
+        local totemStatus = AUTO_TOTEM and "ON (Scanner)" or "OFF"
+        label.Text = string.format("ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: 0", totemStatus)
         label.TextColor3 = Color3.new(0, 1, 0)
-        print("[ETZO] Mesin Pancing Legit Berjalan!")
     end)
 
     if not success then
