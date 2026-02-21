@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO STORE - HEADLESS AUTO FISH V1.2 (INSTANT UI & FAILSAFE)
+-- ETZO STORE - HEADLESS AUTO FISH V1.3 (NETWORK WAITER FIX)
 -- ====================================================================
 local WEBHOOK_URL = "PASTE_URL_WEBHOOK_DISCORD_DISINI"
 local AUTO_SELL = true
@@ -14,15 +14,14 @@ local TARGET_FISH = {
 }
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- 1. MUNCULKAN UI INSTAN (Agar kita tahu script merespons)
+-- 1. UI INSTAN (DEBUGGER)
 local guiParent = game:GetService("CoreGui")
 if not pcall(function() local _ = guiParent.Name end) then
     guiParent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
--- Hapus UI lama jika ada
 if guiParent:FindFirstChild("EtzoBlackScreen") then
     guiParent.EtzoBlackScreen:Destroy()
 end
@@ -41,15 +40,15 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO STORE - MEMUAT MESIN PANCING..."
-label.TextColor3 = Color3.new(1, 1, 0) -- Warna Kuning (Loading)
+label.Text = "ETZO STORE - MEMUAT MESIN PANCING...\n(Menunggu Jaringan Game Terunduh)"
+label.TextColor3 = Color3.new(1, 1, 0) -- Kuning
 label.Font = Enum.Font.Code
 label.TextSize = 24
 label.Parent = frame
 
 print("[ETZO] UI Dimuat. Memulai injeksi jaringan...")
 
--- 2. EKSEKUSI LOGIKA JARINGAN DENGAN ERROR CATCHING
+-- 2. EKSEKUSI JARINGAN (SAFE WAIT)
 task.spawn(function()
     local success, errorMessage = pcall(function()
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -67,14 +66,26 @@ task.spawn(function()
         game:GetService("Lighting").GlobalShadows = false
         RunService:Set3dRenderingEnabled(false)
 
-        -- 🔗 MENGAMBIL REMOTE JARINGAN
-        local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-        local ChargeRod    = net["RF/ChargeFishingRod"]
-        local RequestGame  = net["RF/RequestFishingMinigameStarted"]
-        local CompleteGame = net["RE/FishingCompleted"]
-        local CancelInput  = net["RF/CancelFishingInputs"]
-        local SellAll      = net["RF/SellAllItems"]
-        local ObtainedNewFish = net["RE/ObtainedNewFishNotification"]
+        -- 🔗 AMAN MENGAMBIL REMOTE JARINGAN (TUNGGU MAX 30 DETIK)
+        local Packages = ReplicatedStorage:WaitForChild("Packages", 30)
+        if not Packages then error("Folder Packages gagal dimuat!") end
+
+        local _Index = Packages:WaitForChild("_Index", 30)
+        if not _Index then error("Folder _Index gagal dimuat!") end
+
+        local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
+        if not sleitnick then error("sleitnick_net gagal dimuat!") end
+
+        local net = sleitnick:WaitForChild("net", 30)
+        if not net then error("Remote net gagal dimuat!") end
+
+        -- Ambil Event
+        local ChargeRod    = net:WaitForChild("RF/ChargeFishingRod", 10)
+        local RequestGame  = net:WaitForChild("RF/RequestFishingMinigameStarted", 10)
+        local CompleteGame = net:WaitForChild("RE/FishingCompleted", 10)
+        local CancelInput  = net:WaitForChild("RF/CancelFishingInputs", 10)
+        local SellAll      = net:WaitForChild("RF/SellAllItems", 10)
+        local ObtainedNewFish = net:WaitForChild("RE/ObtainedNewFishNotification", 10)
 
         -- 📡 SISTEM WEBHOOK
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
@@ -175,7 +186,7 @@ task.spawn(function()
 
     if not success then
         -- UBAH UI JADI MERAH (ERROR)
-        label.Text = "ETZO STORE - ERROR!\nSilakan Cek F9 (Console)\n" .. tostring(errorMessage)
+        label.Text = "ETZO STORE - ERROR!\n" .. tostring(errorMessage)
         label.TextColor3 = Color3.new(1, 0, 0)
         warn("[ETZO ERROR FATAL] " .. tostring(errorMessage))
     end
