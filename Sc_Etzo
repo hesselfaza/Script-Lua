@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO STORE - HEADLESS AUTO FISH V1.4 (LEGIT / AUTO SHAKE FIX)
+-- ETZO STORE - HEADLESS AUTO FISH V1.5 (LIVE COUNTER DASHBOARD)
 -- ====================================================================
 local WEBHOOK_URL = "PASTE_URL_WEBHOOK_DISCORD_DISINI"
 local AUTO_SELL = true
@@ -14,7 +14,7 @@ local TARGET_FISH = {
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- 1. UI INSTAN (DEBUGGER)
+-- 1. UI INSTAN (SMART DASHBOARD)
 local guiParent = game:GetService("CoreGui")
 if not pcall(function() local _ = guiParent.Name end) then
     guiParent = LocalPlayer:WaitForChild("PlayerGui")
@@ -70,7 +70,6 @@ task.spawn(function()
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
-        -- Ambil Event (Ada tambahan EquipTool untuk mode Legit)
         local EquipTool    = net:WaitForChild("RE/EquipToolFromHotbar", 10)
         local ChargeRod    = net:WaitForChild("RF/ChargeFishingRod", 10)
         local RequestGame  = net:WaitForChild("RF/RequestFishingMinigameStarted", 10)
@@ -79,7 +78,8 @@ task.spawn(function()
         local SellAll      = net:WaitForChild("RF/SellAllItems", 10)
         local ObtainedNewFish = net:WaitForChild("RE/ObtainedNewFishNotification", 10)
 
-        -- 📡 SISTEM WEBHOOK
+        -- 📡 SISTEM WEBHOOK & PENGHITUNG IKAN (LIVE COUNTER)
+        local totalCaught = 0 -- Variabel penghitung ikan
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         local RARITY_MAP = {
             [1] = {Name = "Common", Color = 0x9e9e9e},
@@ -128,8 +128,14 @@ task.spawn(function()
             end
         end
 
+        -- KETIKA IKAN BERHASIL DITANGKAP
         ObtainedNewFish.OnClientEvent:Connect(function(_, weightData, wrapper)
             if not wrapper or not wrapper.InventoryItem then return end
+            
+            -- Tambah penghitung dan update layar hitam
+            totalCaught = totalCaught + 1
+            label.Text = string.format("ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n\n🐟 Total Ikan Ditangkap: %d", totalCaught)
+
             local item = wrapper.InventoryItem
             if not item.Id then return end
             local fishData = FishDB[item.Id]
@@ -150,38 +156,23 @@ task.spawn(function()
         end
 
         -- 🎣 FISHING LOGIC (LEGIT / AUTO SHAKE)
-        -- Membutuhkan pancingan berada di Slot 1 Inventory
         local function startFarming()
             pcall(function() CancelInput:InvokeServer() end)
             task.wait(1)
             
             while isFarming do
-                -- Update Waktu Server per lemparan agar lolos Anti-Cheat
                 local currentArgs = {-1.233, 1, workspace:GetServerTimeNow()}
-                
-                -- 1. Equip Pancingan
                 pcall(function() EquipTool:FireServer(1) end)
                 task.wait(0.2)
-                
-                -- 2. Lempar Kail
                 task.spawn(function() pcall(function() ChargeRod:InvokeServer() end) end)
                 task.wait(0.1)
-                
-                -- 3. Trigger Minigame
                 task.spawn(function() pcall(function() RequestGame:InvokeServer(unpack(currentArgs)) end) end)
-                
-                -- 4. Jeda Realistis Menunggu Ikan Gigit
                 task.wait(1.5)
-                
-                -- 5. AUTO SHAKE / SPAM CATCH
-                -- Melakukan spam klik penyelesaian selama 2 detik
                 for i = 1, 20 do
                     if not isFarming then break end
                     pcall(function() CompleteGame:FireServer() end)
                     task.wait(0.1)
                 end
-                
-                -- 6. Reset Animasi sebelum mengulang
                 pcall(function() CancelInput:FireServer() end)
                 task.wait(0.8)
             end
@@ -189,16 +180,14 @@ task.spawn(function()
 
         task.spawn(startFarming)
         
-        -- UBAH UI JADI HIJAU (SUKSES)
-        label.Text = "ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]"
+        -- UBAH UI JADI HIJAU SAAT PERTAMA JALAN
+        label.Text = "ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n\n🐟 Total Ikan Ditangkap: 0"
         label.TextColor3 = Color3.new(0, 1, 0)
         print("[ETZO] Mesin Pancing Legit Berjalan!")
     end)
 
     if not success then
-        -- UBAH UI JADI MERAH (ERROR)
         label.Text = "ETZO STORE - ERROR!\n" .. tostring(errorMessage)
         label.TextColor3 = Color3.new(1, 0, 0)
-        warn("[ETZO ERROR FATAL] " .. tostring(errorMessage))
     end
 end)
