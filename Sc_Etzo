@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V1.8
+-- ETZO - HEADLESS AUTO FISH V1.9 (FIXED BACKPACK SCANNER)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -97,7 +97,7 @@ task.spawn(function()
         }
 
         local function SendWebhook(fishName, tier, weight)
-            if WEBHOOK_URL == "" or WEBHOOK_URL == "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur" then return end
+            if WEBHOOK_URL == "" or WEBHOOK_URL == "PASTE_URL_WEBHOOK_DISCORD_DISINI" then return end
             local rarityInfo = RARITY_MAP[tier] or {Name = "Unknown", Color = 0xffffff}
             local payload = {
                 username = "Etzo Bot",
@@ -167,7 +167,7 @@ task.spawn(function()
             task.wait(1)
             
             while isFarming do
-                -- 🗿 1. ABSOLUTE BACKPACK SCANNER (Mencari Totem di mana pun ia sembunyi)
+                -- 🗿 1. ABSOLUTE BACKPACK SCANNER (Mencari Totem dengan string.lower)
                 if AUTO_TOTEM and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
                     local char = LocalPlayer.Character
                     local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -176,9 +176,9 @@ task.spawn(function()
                     if char and backpack and humanoid then
                         local totemTool = nil
                         
-                        -- Cek apakah Totem sudah dipegang
+                        -- Cek apakah Totem sudah dipegang di tangan (kebal huruf besar/kecil)
                         for _, item in ipairs(char:GetChildren()) do
-                            if item:IsA("Tool") and string.find(item.Name, "luck totem") then
+                            if item:IsA("Tool") and string.find(string.lower(item.Name), "luck totem") then
                                 totemTool = item
                                 break
                             end
@@ -187,7 +187,7 @@ task.spawn(function()
                         -- Jika belum dipegang, bongkar Backpack (Tas)
                         if not totemTool then
                             for _, item in ipairs(backpack:GetChildren()) do
-                                if item:IsA("Tool") and string.find(item.Name, "luck totem") then
+                                if item:IsA("Tool") and string.find(string.lower(item.Name), "luck totem") then
                                     totemTool = item
                                     break
                                 end
