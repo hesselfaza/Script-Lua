@@ -1,9 +1,9 @@
 -- ====================================================================
--- ETZO STORE - HEADLESS AUTO FISH V1.8 (ABSOLUTE BACKPACK SCANNER)
+-- ETZO - HEADLESS AUTO FISH V1.8
 -- ====================================================================
-local WEBHOOK_URL = "PASTE_URL_WEBHOOK_DISCORD_DISINI"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
-local SELL_INTERVAL = 60
+local SELL_INTERVAL = 30
 
 -- 🗿 KONFIGURASI AUTO TOTEM
 local AUTO_TOTEM = true
@@ -11,6 +11,7 @@ local TOTEM_INTERVAL = 180  -- Waktu (detik) pasang ulang Totem (180 = 3 menit)
 
 local TARGET_FISH = {
     ["Golden Megalodon"] = true,
+    ["Sophisticated Angler"] = true,
     ["Abyssal Kraken"] = true,
     ["Void Leviathan"] = true,
 }
@@ -42,7 +43,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO STORE - MEMUAT MESIN PANCING..."
+label.Text = "ETZO - MEMUAT MESIN PANCING..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -96,10 +97,10 @@ task.spawn(function()
         }
 
         local function SendWebhook(fishName, tier, weight)
-            if WEBHOOK_URL == "" or WEBHOOK_URL == "PASTE_URL_WEBHOOK_DISCORD_DISINI" then return end
+            if WEBHOOK_URL == "" or WEBHOOK_URL == "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur" then return end
             local rarityInfo = RARITY_MAP[tier] or {Name = "Unknown", Color = 0xffffff}
             local payload = {
-                username = "Etzo Store Bot",
+                username = "Etzo Bot",
                 embeds = {{
                     title = "🎣 Target Ikan Berhasil Ditangkap!",
                     color = rarityInfo.Color,
@@ -137,7 +138,7 @@ task.spawn(function()
             
             totalCaught = totalCaught + 1
             local totemStatus = AUTO_TOTEM and "ON (Scanner)" or "OFF"
-            label.Text = string.format("ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: %d", totemStatus, totalCaught)
+            label.Text = string.format("ETZO - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: %d", totemStatus, totalCaught)
 
             local item = wrapper.InventoryItem
             if not item.Id then return end
@@ -203,7 +204,7 @@ task.spawn(function()
                             task.wait(1)
                             
                             lastTotemPlace = os.time()
-                            print("[ETZO] Totem berhasil digali dari Tas dan dipasang!")
+                            print("[ETZO] Totem berhasil dipasang!")
                         else
                             print("[ETZO] Totem tidak ditemukan. Apakah stok habis?")
                         end
@@ -235,12 +236,12 @@ task.spawn(function()
         task.spawn(startFarming)
         
         local totemStatus = AUTO_TOTEM and "ON (Scanner)" or "OFF"
-        label.Text = string.format("ETZO STORE - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: 0", totemStatus)
+        label.Text = string.format("ETZO - BOT AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: 0", totemStatus)
         label.TextColor3 = Color3.new(0, 1, 0)
     end)
 
     if not success then
-        label.Text = "ETZO STORE - ERROR!\n" .. tostring(errorMessage)
+        label.Text = "ETZO - ERROR!\n" .. tostring(errorMessage)
         label.TextColor3 = Color3.new(1, 0, 0)
     end
 end)
