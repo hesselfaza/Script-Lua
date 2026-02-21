@@ -178,7 +178,7 @@ task.spawn(function()
                         
                         -- Cek apakah Totem sudah dipegang
                         for _, item in ipairs(char:GetChildren()) do
-                            if item:IsA("Tool") and string.find(item.Name, "Luck Totem") then
+                            if item:IsA("Tool") and string.find(item.Name, "luck totem") then
                                 totemTool = item
                                 break
                             end
@@ -187,7 +187,7 @@ task.spawn(function()
                         -- Jika belum dipegang, bongkar Backpack (Tas)
                         if not totemTool then
                             for _, item in ipairs(backpack:GetChildren()) do
-                                if item:IsA("Tool") and string.find(item.Name, "Luck Totem") then
+                                if item:IsA("Tool") and string.find(item.Name, "luck totem") then
                                     totemTool = item
                                     break
                                 end
