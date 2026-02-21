@@ -1,66 +1,37 @@
 -- ====================================================================
---                 ETZO STORE - HEADLESS AUTO FISH V1.0
---      Core: Super Instant (Patch-Bypass) + Specific Name Webhook
+-- ETZO STORE - HEADLESS AUTO FISH V1.2 (INSTANT UI & FAILSAFE)
 -- ====================================================================
-
--- ⚙️ KONFIGURASI UTAMA
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
+local WEBHOOK_URL = "PASTE_URL_WEBHOOK_DISCORD_DISINI"
 local AUTO_SELL = true
-local SELL_INTERVAL = 30 -- Interval jual ikan (Detik)
-
--- Jeda waktu (Sangat penting untuk bypass Anti-Cheat)
+local SELL_INTERVAL = 60
 local DELAY_CHARGE = 1.30 
 local DELAY_RESET = 0.35 
 
--- 🎯 DAFTAR IKAN SPESIFIK UNTUK DISCORD
--- Tambahkan nama ikan incaranmu di bawah ini (Huruf besar/kecil harus persis).
 local TARGET_FISH = {
-    ["Queen Crab"] = true,
-    ["King Crab"] = true,
-    -- ["Nama Ikan Lain"] = true,
+    ["Golden Megalodon"] = true,
+    ["Abyssal Kraken"] = true,
+    ["Void Leviathan"] = true,
 }
 
--- ====================================================================
--- INISIALISASI SISTEM
--- ====================================================================
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
-local VirtualUser = game:GetService("VirtualUser")
-
 local LocalPlayer = Players.LocalPlayer
 
--- Mengambil Endpoint Jaringan (RemoteEvent/Function)
-local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0").net
-local ChargeRod    = net["RF/ChargeFishingRod"]
-local RequestGame  = net["RF/RequestFishingMinigameStarted"]
-local CompleteGame = net["RE/FishingCompleted"]
-local CancelInput  = net["RF/CancelFishingInputs"]
-local SellAll      = net["RF/SellAllItems"]
-local ObtainedNewFish = net["RE/ObtainedNewFishNotification"]
+-- 1. MUNCULKAN UI INSTAN (Agar kita tahu script merespons)
+local guiParent = game:GetService("CoreGui")
+if not pcall(function() local _ = guiParent.Name end) then
+    guiParent = LocalPlayer:WaitForChild("PlayerGui")
+end
 
-local args = {-1.233, 1, workspace:GetServerTimeNow()}
-local isFarming = true
-
--- ====================================================================
--- 🛡️ ANTI-AFK & 🖥️ GPU SAVER
--- ====================================================================
-LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-end)
-
-pcall(function()
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    game:GetService("Lighting").GlobalShadows = false
-    RunService:Set3dRenderingEnabled(false)
-end)
+-- Hapus UI lama jika ada
+if guiParent:FindFirstChild("EtzoBlackScreen") then
+    guiParent.EtzoBlackScreen:Destroy()
+end
 
 local blackScreen = Instance.new("ScreenGui")
+blackScreen.Name = "EtzoBlackScreen"
 blackScreen.IgnoreGuiInset = true
 blackScreen.ResetOnSpawn = false
-blackScreen.Parent = game.CoreGui
+blackScreen.Parent = guiParent
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(1, 0, 1, 0)
@@ -70,118 +41,142 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO STORE - BOT AKTIF\\n[ Mode Headless & Layar Dimatikan ]"
-label.TextColor3 = Color3.new(0, 1, 0)
+label.Text = "ETZO STORE - MEMUAT MESIN PANCING..."
+label.TextColor3 = Color3.new(1, 1, 0) -- Warna Kuning (Loading)
 label.Font = Enum.Font.Code
 label.TextSize = 24
 label.Parent = frame
 
--- ====================================================================
--- 📡 SISTEM WEBHOOK DISCORD (NAMA SPESIFIK)
--- ====================================================================
-local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
+print("[ETZO] UI Dimuat. Memulai injeksi jaringan...")
 
-local RARITY_MAP = {
-    [1] = {Name = "Common", Color = 0x9e9e9e},
-    [2] = {Name = "Uncommon", Color = 0x4caf50},
-    [3] = {Name = "Rare", Color = 0x2196f3},
-    [4] = {Name = "Epic", Color = 0x9c27b0},
-    [5] = {Name = "Legendary", Color = 0xff9800},
-    [6] = {Name = "Mythic", Color = 0xf44336},
-    [7] = {Name = "Secret", Color = 0xff1744},
-}
+-- 2. EKSEKUSI LOGIKA JARINGAN DENGAN ERROR CATCHING
+task.spawn(function()
+    local success, errorMessage = pcall(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local RunService = game:GetService("RunService")
+        local HttpService = game:GetService("HttpService")
+        local VirtualUser = game:GetService("VirtualUser")
 
-local function SendWebhook(fishName, tier, weight)
-    if WEBHOOK_URL == "" or WEBHOOK_URL == "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur" then return end
-    
-    local rarityInfo = RARITY_MAP[tier] or {Name = "Unknown", Color = 0xffffff}
-    
-    local payload = {
-        username = "Etzo Store Bot",
-        embeds = {{
-            title = "🎣 Target Ikan Berhasil Ditangkap!",
-            color = rarityInfo.Color,
-            fields = {
-                { name = "Akun", value = LocalPlayer.Name, inline = true },
-                { name = "Ikan", value = fishName, inline = true },
-                { name = "Rarity", value = rarityInfo.Name, inline = true },
-                { name = "Berat", value = string.format("%.2f kg", weight or 0), inline = true },
-            },
-            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-        }}
-    }
+        -- 🛡️ GPU SAVER & ANTI-AFK
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
 
-    pcall(function()
-        HttpRequest({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = { ["Content-Type"] = "application/json" },
-            Body = HttpService:JSONEncode(payload)
-        })
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        game:GetService("Lighting").GlobalShadows = false
+        RunService:Set3dRenderingEnabled(false)
+
+        -- 🔗 MENGAMBIL REMOTE JARINGAN
+        local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
+        local ChargeRod    = net["RF/ChargeFishingRod"]
+        local RequestGame  = net["RF/RequestFishingMinigameStarted"]
+        local CompleteGame = net["RE/FishingCompleted"]
+        local CancelInput  = net["RF/CancelFishingInputs"]
+        local SellAll      = net["RF/SellAllItems"]
+        local ObtainedNewFish = net["RE/ObtainedNewFishNotification"]
+
+        -- 📡 SISTEM WEBHOOK
+        local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
+        local RARITY_MAP = {
+            [1] = {Name = "Common", Color = 0x9e9e9e},
+            [2] = {Name = "Uncommon", Color = 0x4caf50},
+            [3] = {Name = "Rare", Color = 0x2196f3},
+            [4] = {Name = "Epic", Color = 0x9c27b0},
+            [5] = {Name = "Legendary", Color = 0xff9800},
+            [6] = {Name = "Mythic", Color = 0xf44336},
+            [7] = {Name = "Secret", Color = 0xff1744},
+        }
+
+        local function SendWebhook(fishName, tier, weight)
+            if WEBHOOK_URL == "" or WEBHOOK_URL == "PASTE_URL_WEBHOOK_DISCORD_DISINI" then return end
+            local rarityInfo = RARITY_MAP[tier] or {Name = "Unknown", Color = 0xffffff}
+            local payload = {
+                username = "Etzo Store Bot",
+                embeds = {{
+                    title = "🎣 Target Ikan Berhasil Ditangkap!",
+                    color = rarityInfo.Color,
+                    fields = {
+                        { name = "Akun", value = LocalPlayer.Name, inline = true },
+                        { name = "Ikan", value = fishName, inline = true },
+                        { name = "Rarity", value = rarityInfo.Name, inline = true },
+                        { name = "Berat", value = string.format("%.2f kg", weight or 0), inline = true },
+                    },
+                    timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+                }}
+            }
+            pcall(function()
+                HttpRequest({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = HttpService:JSONEncode(payload)
+                })
+            end)
+        end
+
+        local FishDB = {}
+        for _, module in ipairs(ReplicatedStorage.Items:GetChildren()) do
+            if module:IsA("ModuleScript") then
+                local ok, mod = pcall(require, module)
+                if ok and mod and mod.Data and mod.Data.Type == "Fish" then
+                    FishDB[mod.Data.Id] = mod.Data
+                end
+            end
+        end
+
+        ObtainedNewFish.OnClientEvent:Connect(function(_, weightData, wrapper)
+            if not wrapper or not wrapper.InventoryItem then return end
+            local item = wrapper.InventoryItem
+            if not item.Id then return end
+            local fishData = FishDB[item.Id]
+            if fishData and TARGET_FISH[fishData.Name] then
+                SendWebhook(fishData.Name, fishData.Tier, weightData and weightData.Weight or 0)
+            end
+        end)
+
+        -- 💰 AUTO SELL
+        local isFarming = true
+        if AUTO_SELL then
+            task.spawn(function()
+                while isFarming do
+                    task.wait(SELL_INTERVAL)
+                    pcall(function() SellAll:InvokeServer() end)
+                end
+            end)
+        end
+
+        -- 🎣 FISHING LOGIC
+        local args = {-1.233, 1, workspace:GetServerTimeNow()}
+        local function startFarming()
+            pcall(function() CancelInput:InvokeServer() end)
+            task.wait(0.1)
+            
+            while isFarming do
+                task.spawn(function() pcall(function() ChargeRod:InvokeServer() end) end)
+                task.wait(0.01)
+                task.spawn(function() pcall(function() RequestGame:InvokeServer(unpack(args)) end) end)
+                
+                task.wait(DELAY_CHARGE)
+                pcall(function() CompleteGame:FireServer() end)
+                task.wait(0.01)
+                pcall(function() CancelInput:FireServer() end)
+                task.wait(DELAY_RESET)
+            end
+        end
+
+        task.spawn(startFarming)
+        
+        -- UBAH UI JADI HIJAU (SUKSES)
+        label.Text = "ETZO STORE - BOT AKTIF\n[ Mode Headless & Layar Dimatikan ]"
+        label.TextColor3 = Color3.new(0, 1, 0)
+        print("[ETZO] Mesin Pancing Berjalan!")
     end)
-end
 
-local FishDB = {}
-for _, module in ipairs(ReplicatedStorage.Items:GetChildren()) do
-    if module:IsA("ModuleScript") then
-        local ok, mod = pcall(require, module)
-        if ok and mod and mod.Data and mod.Data.Type == "Fish" then
-            FishDB[mod.Data.Id] = mod.Data
-        end
-    end
-end
-
-ObtainedNewFish.OnClientEvent:Connect(function(_, weightData, wrapper)
-    if not wrapper or not wrapper.InventoryItem then return end
-    local item = wrapper.InventoryItem
-    if not item.Id then return end
-    
-    local fishData = FishDB[item.Id]
-    if fishData then
-        -- Cek apakah ikan masuk dalam daftar target
-        if TARGET_FISH[fishData.Name] then
-            SendWebhook(fishData.Name, fishData.Tier, weightData and weightData.Weight or 0)
-        end
+    if not success then
+        -- UBAH UI JADI MERAH (ERROR)
+        label.Text = "ETZO STORE - ERROR!\nSilakan Cek F9 (Console)\n" .. tostring(errorMessage)
+        label.TextColor3 = Color3.new(1, 0, 0)
+        warn("[ETZO ERROR FATAL] " .. tostring(errorMessage))
     end
 end)
-
--- ====================================================================
--- 💰 SISTEM AUTO SELL
--- ====================================================================
-if AUTO_SELL then
-    task.spawn(function()
-        while isFarming do
-            task.wait(SELL_INTERVAL)
-            pcall(function() SellAll:InvokeServer() end)
-        end
-    end)
-end
-
--- ====================================================================
--- 🎣 SISTEM FISHING SUPER INSTANT
--- ====================================================================
-local function startFarming()
-    pcall(function() CancelInput:InvokeServer() end)
-    task.wait(0.1)
-    
-    while isFarming do
-        task.spawn(function()
-            pcall(function() ChargeRod:InvokeServer() end)
-        end)
-        task.wait(0.01)
-        
-        task.spawn(function()
-            pcall(function() RequestGame:InvokeServer(unpack(args)) end)
-        end)
-        
-        task.wait(DELAY_CHARGE)
-        pcall(function() CompleteGame:FireServer() end)
-        task.wait(0.01)
-        pcall(function() CancelInput:FireServer() end)
-        task.wait(DELAY_RESET)
-    end
-end
-
--- Eksekusi Utama
-task.spawn(startFarming)
-print("[ETZO STORE] Headless Auto Fish Berjalan!")
