@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V7.0 (TRUE GHOST & SAFE STRINGIFIER)
+-- ETZO - HEADLESS AUTO FISH V7.1 (DUAL COUNTER & TRUE GHOST)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,19 +7,13 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN (Daftar Dinamis)
+-- 🎯 TARGET IKAN SULTAN
 local TARGET_FISH = {
     ["golden megalodon"] = true,
     ["sophisticated angler"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
-    ["ruby"] = true, 
-    
-    -- TES IKAN MURAH:
-    ["bass"] = true,
-    ["salmon"] = true,
-    ["trout"] = true,
-    ["mackerel"] = true,
+    ["ruby"] = true, -- Untuk memicu proteksi Gemstone
 }
 
 local Players = game:GetService("Players")
@@ -44,7 +38,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V7.0 TRUE GHOST..."
+label.Text = "ETZO - MEMUAT V7.1 DUAL COUNTER..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -66,13 +60,20 @@ task.spawn(function()
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
-        local totalCaught = 0
+        -- 📊 VARIABEL DUAL COUNTER
+        local totalSemuaIkan = 0
+        local totalIkanSultan = 0
+        local namaSultanTerakhir = "Belum ada"
+
+        local function updateDashboard()
+            label.Text = string.format("ETZO - BOT V7.1 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+        end
+
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
-        
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V7.0 AKTIF!**\nSistem Safe Stringifier & Anti-Tertukar menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V7.1 AKTIF!**\nSistem Dual Counter menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -94,7 +95,6 @@ task.spawn(function()
         -- ==========================================
         -- ☢️ SAFE STRINGIFIER (ANTI-CRASH)
         -- ==========================================
-        -- Fungsi ini mengekstrak semua teks dari dalam paket data tanpa peduli seberapa tebal enkripsinya
         local function safeExtractStrings(t, depth)
             if depth > 5 or type(t) ~= "table" then return "" end
             local str = ""
@@ -129,7 +129,7 @@ task.spawn(function()
         local lastFishTime = 0
         
         -- ==========================================
-        -- ⚡ PRECISE FAST REEL
+        -- ⚡ PRECISE FAST REEL & PENGHITUNG GLOBAL
         -- ==========================================
         local isReeling = false
         local function triggerFastReel()
@@ -143,6 +143,10 @@ task.spawn(function()
                 pcall(function() if catchEnc then catchEnc:InvokeServer() end end)
                 pcall(function() if catchPlain then catchPlain:InvokeServer() end end)
                 
+                -- Penghitung Semua Ikan Bertambah di sini!
+                totalSemuaIkan = totalSemuaIkan + 1
+                updateDashboard()
+                
                 task.wait(1.5)
                 isReeling = false
             end)
@@ -155,11 +159,10 @@ task.spawn(function()
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 2. PENYADAP IKAN
+                -- 2. PENYADAP IKAN (KHUSUS SULTAN)
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     
-                    -- BLOKIR KEPEMILIKAN: Jika ada nama player lain di data ini, abaikan!
                     local isOtherPlayer = false
                     for _, arg in pairs(args) do
                         if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then
@@ -168,7 +171,6 @@ task.spawn(function()
                     end
                     if isOtherPlayer then return end
                     
-                    -- Ekstrak data mentah menjadi teks panjang
                     local dataStr = ""
                     for _, arg in pairs(args) do
                         if type(arg) == "table" then
@@ -178,7 +180,6 @@ task.spawn(function()
                         end
                     end
                     
-                    -- Bersihkan dari garis bawah (Luraph Obfuscation)
                     dataStr = string.gsub(dataStr, "_", " ")
                     
                     local caughtFish = nil
@@ -190,14 +191,22 @@ task.spawn(function()
                     end
                     
                     if caughtFish then
-                        -- Mencegah notifikasi berlipat ganda dari berbagai remote
                         if (os.time() - lastFishTime) < 2 then return end
                         lastFishTime = os.time()
                         
-                        totalCaught = totalCaught + 1
-                        label.Text = string.format("ETZO - BOT V7.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: %d\n🎣 Terakhir: %s", totalCaught, string.upper(caughtFish))
+                        -- Penghitung Ikan Sultan Bertambah di sini!
+                        if caughtFish == "ruby" and not string.find(dataStr, "gemstone") then
+                            -- Pengecualian: Ruby biasa tidak dihitung sebagai sultan
+                        else
+                            totalIkanSultan = totalIkanSultan + 1
+                            if caughtFish == "ruby" and string.find(dataStr, "gemstone") then
+                                namaSultanTerakhir = "Gemstone Ruby"
+                            else
+                                namaSultanTerakhir = caughtFish
+                            end
+                            updateDashboard()
+                        end
 
-                        -- LOGIKA GEMSTONE RUBY FAVORIT
                         if caughtFish == "ruby" and string.find(dataStr, "gemstone") then
                             local uuid = getUUID(args)
                             if uuid then
@@ -220,6 +229,7 @@ task.spawn(function()
         end
 
         local isFarming = true
+        updateDashboard()
 
         -- 💰 AUTO SELL
         if AUTO_SELL then
@@ -273,8 +283,6 @@ task.spawn(function()
                 end
             end
         end)
-        
-        label.Text = "ETZO - BOT V7.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-    if not success then label.Text = "ETZO V7.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V7.1 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
