@@ -285,57 +285,85 @@ task.spawn(function()
         end
 
         -- 🗿 AUTO TOTEM
+-- 🗿 AUTO TOTEM (V9.6 MULTI-PAYLOAD & ID CRACKER)
         local lastTotemPlace = 0
         task.spawn(function()
             local VirtualUser = game:GetService("VirtualUser")
             while isFarming do
                 task.wait(1)
-                -- Waktu masih 15 detik agar cepat dites
+                -- Interval 15 detik untuk testing cepat
                 if AUTO_TOTEM and (os.time() - lastTotemPlace >= 15) then
                     local char = LocalPlayer.Character
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
                     if char and hum then
-                        -- TAHAP 1: Meretas Custom Inventory
-                        -- Tembak semua jalur komunikasi Equip untuk memaksa server mengeluarkan totem
-                        for _, r in ipairs(net:GetChildren()) do
-                            if string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr") then
-                                -- Kita minta server untuk meng-equip "Luck Totem" (Sesuai nama di tas Anda)
-                                task.spawn(function() pcall(function() r:FireServer("Luck Totem") end) end)
-                                task.spawn(function() pcall(function() r:InvokeServer("Luck Totem") end) end)
+                        -- 1. Cari dulu di tas fisik (Siapa tahu sudah muncul)
+                        local totemTool = char:FindFirstChild("Luck Totem") or LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
+                        if not totemTool then
+                            for _, v in ipairs(char:GetChildren()) do if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then totemTool = v; break end end
+                        end
+                        
+                        -- 2. Jika tidak ada fisik, kita RETAS SERVER pakai Multi-Payload
+                        if not totemTool then
+                            -- Cari ID Totem di Database internal game
+                            local totemID = nil
+                            for id, name in pairs(FishDB) do
+                                if string.find(name, "luck totem") then totemID = id; break end
+                            end
+                            
+                            for _, r in ipairs(net:GetChildren()) do
+                                local rName = string.lower(r.Name)
+                                -- Hindari menembak remote jual/buang agar aman
+                                if not string.find(rName, "sell") and not string.find(rName, "drop") and not string.find(rName, "delete") then
+                                    if r:IsA("RemoteFunction") or r:IsA("RemoteEvent") then
+                                        local fire = r:IsA("RemoteFunction") and r.InvokeServer or r.FireServer
+                                        
+                                        -- Tembak jika nama remote-nya ada unsur equip/use/item
+                                        if string.find(rName, "equip") or string.find(rName, "use") or string.find(rName, "item") then
+                                            task.spawn(function() pcall(function() fire(r, "Luck Totem") end) end)
+                                            task.spawn(function() pcall(function() fire(r, "luck_totem") end) end)
+                                            if totemID then
+                                                task.spawn(function() pcall(function() fire(r, totemID) end) end)
+                                                task.spawn(function() pcall(function() fire(r, tostring(totemID)) end) end)
+                                            end
+                                        end
+                                        
+                                        -- Tembakan Khusus: Jika dev menggunakan argumen ke-1 sebagai perintah utama
+                                        task.spawn(function() pcall(function() fire(r, "Equip", "Luck Totem") end) end)
+                                    end
+                                end
+                            end
+                            
+                            task.wait(2) -- Beri nafas server untuk mengirimkan item 3D-nya
+                            
+                            -- Tangkap item yang baru saja dikirim server
+                            totemTool = char:FindFirstChild("Luck Totem") or LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
+                            if not totemTool then
+                                for _, v in ipairs(char:GetChildren()) do if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then totemTool = v; break end end
                             end
                         end
                         
-                        -- Beri waktu 1.5 detik agar server memproses dan memunculkan 3D Totem-nya di tangan
-                        task.wait(1.5) 
-                        
-                        -- TAHAP 2: Tangkap wujud fisik yang baru saja dipanggil
-                        local totemTool = nil
-                        for _, v in ipairs(char:GetChildren()) do
-                            if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then 
-                                totemTool = v 
-                                break 
-                            end
-                        end
-                        
+                        -- 3. Eksekusi Penancapan
                         if totemTool then
                             namaSultanTerakhir = "MENANCAPKAN TOTEM..."
                             updateDashboard()
                             
-                            -- TAHAP 3: Spam klik brutal untuk menancapkan
+                            hum:EquipTool(totemTool)
+                            task.wait(1)
+                            
+                            -- Spam klik brutal untuk menembus emulator Redfinger
                             for i = 1, 5 do
                                 pcall(function() totemTool:Activate() end)
                                 pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(0, 0)) end)
-                                pcall(function() VirtualUser:Button1Down(Vector2.new(0,0)); task.wait(0.1); VirtualUser:Button1Up(Vector2.new(0,0)) end)
                                 task.wait(0.5)
                             end
                             
-                            task.wait(3) -- Tunggu animasi menancap selesai
+                            task.wait(3) -- Jeda emas agar animasi totem selesai dan diakui server
                             
-                            -- TAHAP 4: Kembalikan Pancingan ke tangan (Slot 1)
+                            -- Kembalikan Pancingan ke Slot 1
                             for _, r in ipairs(net:GetChildren()) do
-                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
-                                    pcall(function() r:FireServer(1) end) -- Angka 1 biasanya mewakili slot Rod
+                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}fwmr")) then
+                                    pcall(function() r:FireServer(1) end) 
                                     pcall(function() r:FireServer("1") end)
                                 end
                             end
@@ -344,7 +372,7 @@ task.spawn(function()
                             namaSultanTerakhir = "TOTEM SUKSES!"
                             updateDashboard()
                         else
-                            namaSultanTerakhir = "GAGAL: BYPASS TAS DITOLAK"
+                            namaSultanTerakhir = "GAGAL: ID TOTEM DIBLOKIR"
                             updateDashboard()
                             lastTotemPlace = os.time() 
                         end
