@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V8.3 (STRICT ID-CARD VERIFIER)
+-- ETZO - HEADLESS AUTO FISH V8.4 (SCATTERSHOT & ANTI-HONEYPOT)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -38,7 +38,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V8.3 ID-CARD VERIFIER..."
+label.Text = "ETZO - MEMUAT V8.4 SCATTERSHOT..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -60,7 +60,7 @@ task.spawn(function()
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
-        -- 📚 MEMBANGUN KAMUS TERJEMAHAN ID
+        -- 📚 KAMUS TERJEMAHAN ID
         local FishDB = {}
         task.spawn(function()
             pcall(function()
@@ -85,14 +85,14 @@ task.spawn(function()
         local namaSultanTerakhir = "Belum ada"
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V8.3 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card (Anti-Dobel) ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V8.4 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.3 AKTIF!**\nSistem Penjaga Pintu (Anti Hitung Ganda Mutlak) menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.4 AKTIF!**\nSistem Anti-Honeypot (Scattershot) menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -129,7 +129,6 @@ task.spawn(function()
             return uuid
         end
 
-        -- 🗄️ DATABASE BARCODE
         local processedUUIDs = {}
         
         -- ⚡ PRECISE FAST REEL
@@ -154,7 +153,7 @@ task.spawn(function()
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 📦 RESEPSIONIS TAS (STRICT ID-CARD)
+                -- 📦 RESEPSIONIS TAS
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     
@@ -166,7 +165,6 @@ task.spawn(function()
                     end
                     if isOtherPlayer then return end
                     
-                    -- FUNGSI BARU: Mengecek KTP Barang & Menerjemahkan Sekaligus
                     local hasItemID = false
                     local function safeExtractAndTranslate(t, depth)
                         if depth > 5 or type(t) ~= "table" then return "" end
@@ -174,7 +172,7 @@ task.spawn(function()
                         pcall(function()
                             local idVal = t.Id or t.id or t.ItemId or t.itemId
                             if idVal then
-                                hasItemID = true -- MENANDAKAN INI ADALAH BARANG FISIK ASLI!
+                                hasItemID = true 
                                 if FishDB[idVal] then
                                     str = str .. " " .. FishDB[idVal]
                                 end
@@ -191,26 +189,18 @@ task.spawn(function()
                     end
 
                     local dataStr = safeExtractAndTranslate(args, 1)
-                    
-                    -- 🛡️ FILTER 1: HARUS PUNYA KTP BARANG ('Id')
-                    -- Jika tidak punya KTP (cuma efek visual), buang!
                     if not hasItemID then return end
                     
-                    -- 🛡️ FILTER 2: MENCARI BARCODE (UUID)
                     local uuid = getUUID(args)
                     if not uuid then return end
-                    
-                    -- 🛡️ FILTER 3: MENCEGAH BARCODE GANDA
                     if processedUUIDs[uuid] then return end
                     processedUUIDs[uuid] = true 
 
                     if string.len(dataStr) > 400 then return end
                     dataStr = string.lower(string.gsub(dataStr, "_", " "))
                     
-                    -- 🎉 PENGHITUNG GLOBAL (Dijamin tidak akan dobel karena 3 filter di atas!)
                     totalSemuaIkan = totalSemuaIkan + 1
 
-                    -- CEK SULTAN
                     local caughtSultan = nil
                     for targetName, _ in pairs(TARGET_FISH) do
                         if string.find(dataStr, targetName) then
@@ -221,7 +211,7 @@ task.spawn(function()
                     
                     if caughtSultan then
                         if caughtSultan == "ruby" and not string.find(dataStr, "gemstone") then
-                            -- Abaikan Ruby Biasa
+                            -- Abaikan
                         else
                             totalIkanSultan = totalIkanSultan + 1
                             if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
@@ -230,10 +220,17 @@ task.spawn(function()
                                 namaSultanTerakhir = caughtSultan
                             end
                             
+                            -- 🛡️ AUTO FAVORITE (SCATTERSHOT: Tembak semua jalur!)
                             if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
                                 for _, r in ipairs(net:GetChildren()) do
                                     if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
-                                        task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) end end) end)
+                                        task.spawn(function() 
+                                            pcall(function() 
+                                                if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) 
+                                                elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) 
+                                                end 
+                                            end) 
+                                        end)
                                     end
                                 end
                                 print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
@@ -243,7 +240,6 @@ task.spawn(function()
                             end
                         end
                     end
-                    
                     updateDashboard()
                 end)
             end
@@ -252,18 +248,17 @@ task.spawn(function()
         local isFarming = true
         updateDashboard()
 
-        -- 💰 AUTO SELL
+        -- 💰 AUTO SELL (SCATTERSHOT: Anti-Honeypot)
         if AUTO_SELL then
             task.spawn(function()
                 while isFarming do
                     task.wait(SELL_INTERVAL)
-                    local sellRemote = nil
                     for _, r in ipairs(net:GetChildren()) do
+                        -- Mengecek semua remote tanpa break. Menembak semua yang berpotensi menjadi SellAll.
                         if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
-                            sellRemote = r; break
+                            task.spawn(function() pcall(function() r:InvokeServer() end) end)
                         end
                     end
-                    if sellRemote then pcall(function() sellRemote:InvokeServer() end) end
                 end
             end)
         end
@@ -305,5 +300,5 @@ task.spawn(function()
             end
         end)
     end)
-    if not success then label.Text = "ETZO V8.3 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V8.4 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
