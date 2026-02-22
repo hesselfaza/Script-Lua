@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V8.4 (SCATTERSHOT & ANTI-HONEYPOT)
+-- ETZO - HEADLESS AUTO FISH V8.5 (SAFE FAVORITE TESTER EDITION)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,13 +7,19 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
+-- 🧪 PENGATURAN TES AUTO-FAVORITE (Tulis huruf kecil semua)
+-- Ganti dengan ikan murah dan mutasi yang sering Anda dapatkan untuk tes.
+local TEST_FAV_FISH = "sophisticated angler"       -- Contoh: "bass", "salmon", "mackerel"
+local TEST_FAV_MUTATION = "shiny", "gold"  -- Contoh: "shiny", "sparkling", "giant"
+
 -- 🎯 TARGET IKAN SULTAN
 local TARGET_FISH = {
     ["golden megalodon"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
+    ["sophisticated angler"] = true,
     ["ruby"] = true, 
-    ["sophisticated angler"] = true, -- TES VIP
+    [TEST_FAV_FISH] = true, -- Otomatis memasukkan ikan tes Anda ke daftar pantauan
 }
 
 local Players = game:GetService("Players")
@@ -38,7 +44,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V8.4 SCATTERSHOT..."
+label.Text = "ETZO - MEMUAT V8.5 FAVORITE TESTER..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -60,7 +66,6 @@ task.spawn(function()
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
-        -- 📚 KAMUS TERJEMAHAN ID
         local FishDB = {}
         task.spawn(function()
             pcall(function()
@@ -85,14 +90,14 @@ task.spawn(function()
         local namaSultanTerakhir = "Belum ada"
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V8.4 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V8.5 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.4 AKTIF!**\nSistem Anti-Honeypot (Scattershot) menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.5 AKTIF!**\nMode Pengujian Auto-Favorite menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -131,7 +136,7 @@ task.spawn(function()
 
         local processedUUIDs = {}
         
-        -- ⚡ PRECISE FAST REEL
+        -- ⚡ PRECISE FAST REEL (TIDAK DIOTAK-ATIK)
         local isReeling = false
         local function triggerFastReel()
             if isReeling then return end
@@ -153,7 +158,7 @@ task.spawn(function()
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 📦 RESEPSIONIS TAS
+                -- 📦 RESEPSIONIS TAS (TIDAK DIOTAK-ATIK)
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     
@@ -210,18 +215,24 @@ task.spawn(function()
                     end
                     
                     if caughtSultan then
-                        if caughtSultan == "ruby" and not string.find(dataStr, "gemstone") then
-                            -- Abaikan
+                        -- LOGIKA FAVORIT (Ditambahkan kondisi tes, tanpa merusak aslinya)
+                        local isGemstoneRuby = (caughtSultan == "ruby" and string.find(dataStr, "gemstone"))
+                        local isTestFavorite = (caughtSultan == TEST_FAV_FISH and string.find(dataStr, TEST_FAV_MUTATION))
+
+                        if caughtSultan == "ruby" and not isGemstoneRuby then
+                            -- Abaikan Ruby Biasa
                         else
                             totalIkanSultan = totalIkanSultan + 1
-                            if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
+                            if isGemstoneRuby then
                                 namaSultanTerakhir = "Gemstone Ruby"
+                            elseif isTestFavorite then
+                                namaSultanTerakhir = string.upper(TEST_FAV_MUTATION .. " " .. TEST_FAV_FISH)
                             else
                                 namaSultanTerakhir = caughtSultan
                             end
                             
-                            -- 🛡️ AUTO FAVORITE (SCATTERSHOT: Tembak semua jalur!)
-                            if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
+                            -- 🛡️ PELATUK AUTO FAVORITE
+                            if isGemstoneRuby or isTestFavorite then
                                 for _, r in ipairs(net:GetChildren()) do
                                     if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
                                         task.spawn(function() 
@@ -233,8 +244,14 @@ task.spawn(function()
                                         end)
                                     end
                                 end
-                                print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
-                                SendWebhook("Gemstone Ruby")
+                                
+                                if isGemstoneRuby then
+                                    print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby difavoritkan.")
+                                    SendWebhook("Gemstone Ruby (AUTO-LOCKED 🛡️)")
+                                else
+                                    print("[ETZO] TES FAVORIT SUKSES! Ikan " .. TEST_FAV_FISH .. " difavoritkan.")
+                                    SendWebhook(string.upper(TEST_FAV_MUTATION .. " " .. TEST_FAV_FISH) .. " (TEST-LOCKED 🛡️)")
+                                end
                             else
                                 SendWebhook(caughtSultan)
                             end
@@ -248,22 +265,23 @@ task.spawn(function()
         local isFarming = true
         updateDashboard()
 
-        -- 💰 AUTO SELL (SCATTERSHOT: Anti-Honeypot)
+        -- 💰 AUTO SELL (TIDAK DIOTAK-ATIK)
         if AUTO_SELL then
             task.spawn(function()
                 while isFarming do
                     task.wait(SELL_INTERVAL)
+                    local sellRemote = nil
                     for _, r in ipairs(net:GetChildren()) do
-                        -- Mengecek semua remote tanpa break. Menembak semua yang berpotensi menjadi SellAll.
                         if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
-                            task.spawn(function() pcall(function() r:InvokeServer() end) end)
+                            sellRemote = r; break
                         end
                     end
+                    if sellRemote then pcall(function() sellRemote:InvokeServer() end) end
                 end
             end)
         end
 
-        -- 🗿 AUTO TOTEM
+        -- 🗿 AUTO TOTEM (TIDAK DIOTAK-ATIK)
         local lastTotemPlace = 0
         task.spawn(function()
             while isFarming do
@@ -300,5 +318,5 @@ task.spawn(function()
             end
         end)
     end)
-    if not success then label.Text = "ETZO V8.4 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V8.5 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
