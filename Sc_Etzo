@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V5.0 (SMART FAST REEL + X-RAY LISTENER)
+-- ETZO - HEADLESS AUTO FISH V6.0 (PRECISE FAST REEL & OWNERSHIP FILTER)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,7 +7,7 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN (SUDAH DIBERSIHKAN DARI IKAN MURAH)
+-- 🎯 TARGET IKAN
 local TARGET_FISH = {
     ["golden megalodon"] = true,
     ["sophisticated angler"] = true,
@@ -17,6 +17,7 @@ local TARGET_FISH = {
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+local HttpService = game:GetService("HttpService")
 
 local guiParent = game:GetService("CoreGui")
 if not pcall(function() local _ = guiParent.Name end) then guiParent = LocalPlayer:WaitForChild("PlayerGui") end
@@ -36,7 +37,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT SMART FAST REEL..."
+label.Text = "ETZO - MEMUAT V6.0 PRECISE STRIKE..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -46,7 +47,6 @@ task.spawn(function()
     local success, errorMessage = pcall(function()
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
         local RunService = game:GetService("RunService")
-        local HttpService = game:GetService("HttpService")
         local VirtualUser = game:GetService("VirtualUser")
 
         LocalPlayer.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end)
@@ -65,7 +65,7 @@ task.spawn(function()
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V5.0 AKTIF!**\nSistem Smart Fast Reel & X-Ray Webhook memantau akun `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V6.0 AKTIF!**\nSistem Anti-Tertukar & Precise Fast Reel siap untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -74,7 +74,7 @@ task.spawn(function()
             local payload = {
                 username = "Etzo Bot",
                 embeds = {{
-                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0xf44336,
+                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0xff9800,
                     fields = {
                         { name = "Akun", value = LocalPlayer.Name, inline = true },
                         { name = "Ikan", value = fishName, inline = true },
@@ -85,7 +85,7 @@ task.spawn(function()
         end
 
         -- ==========================================
-        -- ☢️ X-RAY DEEP SCANNER
+        -- ☢️ X-RAY + OWNERSHIP FILTER (ANTI-TERTUKAR)
         -- ==========================================
         local function xRayScan(data, checked)
             checked = checked or {}
@@ -107,37 +107,59 @@ task.spawn(function()
             return nil
         end
 
+        local function isFishOwnedByOtherPlayer(args)
+            local success, jsonStr = pcall(function() return HttpService:JSONEncode(args) end)
+            if not success then return false end
+            
+            for _, player in ipairs(Players:GetPlayers()) do
+                -- Jika ada nama player lain di dalam data ikan tersebut, berarti itu bukan milik kita!
+                if player ~= LocalPlayer then
+                    if string.find(jsonStr, player.Name) or string.find(jsonStr, player.DisplayName) then
+                        return true
+                    end
+                end
+            end
+            return false
+        end
+
         local processedFish = {}
         
         -- ==========================================
-        -- ⚡ SMART FAST REEL (ANTI-STUCK)
+        -- ⚡ PRECISE FAST REEL (ANTI-STUCK)
         -- ==========================================
+        local isReeling = false
         local function triggerFastReel()
+            if isReeling then return end
+            isReeling = true
             task.spawn(function()
+                task.wait(0.3) -- Jeda emas 300ms agar server game siap menerima sinyal penarikan
                 local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
                 local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
-                for i = 1, 15 do
-                    task.spawn(function() pcall(function() if catchEnc then catchEnc:InvokeServer() end end) end)
-                    task.spawn(function() pcall(function() if catchPlain then catchPlain:InvokeServer() end end) end)
-                    task.wait(0.1)
-                end
+                
+                -- Tembakan presisi (Single-Shot), tidak ada lagi spam 15x
+                pcall(function() if catchEnc then catchEnc:InvokeServer() end end)
+                pcall(function() if catchPlain then catchPlain:InvokeServer() end end)
+                
+                task.wait(1.5) -- Waktu pendinginan sebelum bisa Fast Reel lagi
+                isReeling = false
             end)
         end
 
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
-                -- 1. DENGARKAN SERVER UNTUK MEMICU FAST REEL PADA SAAT YANG TEPAT SAJA
+                -- 1. PEMICU FAST REEL
                 if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
-                    remote.OnClientEvent:Connect(function()
-                        triggerFastReel()
-                    end)
+                    remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 2. DENGARKAN HASIL TANGKAPAN (X-RAY WEBHOOK)
+                -- 2. PENYADAP IKAN
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
-                    local rawFishData = nil
                     
+                    -- BLOKIR JIKA IKAN MILIK ORANG LAIN
+                    if isFishOwnedByOtherPlayer(args) then return end
+                    
+                    local rawFishData = nil
                     for _, arg in pairs(args) do
                         if type(arg) == "table" then
                             rawFishData = xRayScan(arg)
@@ -151,11 +173,11 @@ task.spawn(function()
                     end
                     
                     if rawFishData then
-                        if processedFish[rawFishData] and (os.time() - processedFish[rawFishData] < 2) then return end
+                        if processedFish[rawFishData] and (os.time() - processedFish[rawFishData] < 3) then return end
                         processedFish[rawFishData] = os.time()
                         
                         totalCaught = totalCaught + 1
-                        label.Text = string.format("ETZO - BOT V5.0 AKTIF\n[ Mode: Auto-Bawaan + Smart Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
+                        label.Text = string.format("ETZO - BOT V6.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
 
                         local cleanName = string.lower(string.gsub(rawFishData, "_", " "))
                         local isTarget = false
@@ -235,7 +257,7 @@ task.spawn(function()
             end
         end)
         
-        label.Text = "ETZO - BOT V5.0 AKTIF\n[ Mode: Auto-Bawaan + Smart Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: 0\n🎣 Terakhir: Menunggu tangkapan..."
+        label.Text = "ETZO - BOT V6.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-    if not success then label.Text = "ETZO V5.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V6.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
