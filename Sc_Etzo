@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V6.1 (STRUCTURAL X-RAY & TRUE OWNERSHIP)
+-- ETZO - HEADLESS AUTO FISH V6.2 (DYNAMIC X-RAY & TRUE OWNERSHIP)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,12 +7,19 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN
+-- 🎯 TARGET IKAN (Daftar Dinamis)
 local TARGET_FISH = {
     ["golden megalodon"] = true,
     ["sophisticated angler"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
+    ["ruby"] = true, -- Wajib ada untuk memicu pengaman Gemstone Ruby
+    
+    -- TES IKAN MURAH:
+    ["bass"] = true,
+    ["salmon"] = true,
+    ["trout"] = true,
+    ["mackerel"] = true,
 }
 
 local Players = game:GetService("Players")
@@ -37,7 +44,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V6.1 STRUCTURAL X-RAY..."
+label.Text = "ETZO - MEMUAT V6.2 DYNAMIC X-RAY..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -65,7 +72,7 @@ task.spawn(function()
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V6.1 AKTIF!**\nSistem X-Ray Struktural & Anti-Bocor siap untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V6.2 AKTIF!**\nSistem X-Ray Dinamis siap untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -74,7 +81,7 @@ task.spawn(function()
             local payload = {
                 username = "Etzo Bot",
                 embeds = {{
-                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0x9c27b0,
+                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0x4caf50,
                     fields = {
                         { name = "Akun", value = LocalPlayer.Name, inline = true },
                         { name = "Ikan", value = fishName, inline = true },
@@ -85,9 +92,8 @@ task.spawn(function()
         end
 
         -- ==========================================
-        -- ☢️ STRUCTURAL X-RAY (ANTI CHAT-SPAM)
+        -- ☢️ DYNAMIC STRUCTURAL X-RAY
         -- ==========================================
-        -- Bot hanya akan bereaksi jika datanya memiliki struktur "ID Item" fisik, bukan sekadar teks.
         local function scanForItemData(args)
             local foundId = nil
             local uniqueId = nil
@@ -95,14 +101,17 @@ task.spawn(function()
             local function searchTable(t, depth)
                 if depth > 4 or type(t) ~= "table" then return end
                 
-                -- Ciri-ciri spesifik paket barang masuk (bukan chat server)
                 local idValue = t.Id or t.id or t.ItemId or t.itemId
                 if idValue and type(idValue) == "string" then
                     local cStr = string.lower(string.gsub(idValue, "_", " "))
-                    if string.find(cStr, "megalodon") or string.find(cStr, "kraken") or string.find(cStr, "leviathan") or string.find(cStr, "angler") or string.find(cStr, "ruby") then
-                        foundId = idValue
-                        uniqueId = t.UUID or t.InstanceId or t.Id
-                        return
+                    
+                    -- DINAMIS: Mengecek ke daftar TARGET_FISH yang Anda buat
+                    for targetName, _ in pairs(TARGET_FISH) do
+                        if string.find(cStr, targetName) then
+                            foundId = idValue
+                            uniqueId = t.UUID or t.InstanceId or t.Id
+                            return
+                        end
                     end
                 end
                 
@@ -145,12 +154,10 @@ task.spawn(function()
 
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
-                -- 1. PEMICU FAST REEL
                 if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 2. PENYADAP IKAN STRUKTURAL
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     local rawFishData, uniqueIdObj = scanForItemData(args)
@@ -160,12 +167,12 @@ task.spawn(function()
                         processedFish[rawFishData] = os.time()
                         
                         totalCaught = totalCaught + 1
-                        label.Text = string.format("ETZO - BOT V6.1 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
+                        label.Text = string.format("ETZO - BOT V6.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
 
                         local cleanName = string.lower(string.gsub(rawFishData, "_", " "))
                         local isTarget = false
                         
-                        -- LOGIKA GEMSTONE RUBY FAVORIT
+                        -- LOGIKA GEMSTONE RUBY
                         if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
                             isTarget = true
                             for _, r in ipairs(net:GetChildren()) do
@@ -178,7 +185,14 @@ task.spawn(function()
                         end
                         
                         for targetName, _ in pairs(TARGET_FISH) do
-                            if string.find(cleanName, targetName) then isTarget = true; break end
+                            -- Khusus ruby, abaikan jika tidak ada gemstone (agar tidak terkirim ke webhook)
+                            if targetName == "ruby" then
+                                if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
+                                    isTarget = true; break
+                                end
+                            elseif string.find(cleanName, targetName) then 
+                                isTarget = true; break 
+                            end
                         end
                         
                         if isTarget then SendWebhook(rawFishData) end
@@ -242,7 +256,7 @@ task.spawn(function()
             end
         end)
         
-        label.Text = "ETZO - BOT V6.1 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: 0\n🎣 Terakhir: Menunggu tangkapan..."
+        label.Text = "ETZO - BOT V6.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-    if not success then label.Text = "ETZO V6.1 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V6.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
