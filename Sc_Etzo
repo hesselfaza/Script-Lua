@@ -10,7 +10,7 @@ local TOTEM_INTERVAL = 180
 -- 🎯 TARGET IKAN (DITAMBAH IKAN MURAH UNTUK TES X-RAY)
 local TARGET_FISH = {
     ["golden megalodon"] = true,
-    ["sophisticated angler"] = true,
+    ["red goatfish"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
     
