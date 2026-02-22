@@ -290,34 +290,31 @@ task.spawn(function()
             local VirtualUser = game:GetService("VirtualUser")
             while isFarming do
                 task.wait(1)
-                -- Paksa interval jadi 15 detik HANYA UNTUK TESTING agar Anda tidak capek menunggu 3 menit
-                -- Nanti bisa dikembalikan ke TOTEM_INTERVAL (180) jika sudah berhasil
+                -- Waktu masih 15 detik agar cepat dites.
                 if AUTO_TOTEM and (os.time() - lastTotemPlace >= 15) then
                     local char = LocalPlayer.Character
-                    local backpack = LocalPlayer:FindFirstChild("Backpack")
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
-                    if char and backpack and hum then
+                    if char and hum then
                         local currentRod = char:FindFirstChildOfClass("Tool")
                         local totemTool = nil
                         
-                        -- PENCARIAN
-                        for _, invItem in ipairs(char:GetChildren()) do
-                            if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "totem") then totemTool = invItem; break end
-                        end
-                        if not totemTool then
-                            for _, invItem in ipairs(backpack:GetChildren()) do
-                                if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "totem") then totemTool = invItem; break end
+                        -- ☢️ OMNI-SEARCH: Geledah SELURUH anatomi akun pemain tanpa ampun!
+                        for _, v in ipairs(LocalPlayer:GetDescendants()) do
+                            if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then
+                                totemTool = v
+                                break
                             end
                         end
 
                         if totemTool then
-                            -- DEBUG 1: BOT MENEMUKAN TOTEM! Tampilkan di layar!
                             namaSultanTerakhir = "MENANCAPKAN " .. string.upper(totemTool.Name) .. "..."
                             updateDashboard()
                             
-                            -- Pindah ke tangan
+                            -- 🛸 TELEPORTASI PAKSA KE TANGAN
                             hum:EquipTool(totemTool)
+                            totemTool.Parent = char -- Jalur belakang jika EquipTool diblokir server
+                            
                             task.wait(1.5) 
                             
                             -- Spam klik brutal (Kombinasi 3 metode penembus emulator)
@@ -328,11 +325,12 @@ task.spawn(function()
                                 task.wait(0.5)
                             end
                             
-                            task.wait(3) -- Tunggu animasi menancap selesai
+                            task.wait(3) -- Tunggu animasi selesai
                             
-                            -- Kembalikan pancingan
-                            if currentRod and currentRod.Parent == backpack then
+                            -- Kembalikan pancingan dengan aman
+                            if currentRod then
                                 hum:EquipTool(currentRod)
+                                currentRod.Parent = char
                             else
                                 for _, r in ipairs(net:GetChildren()) do
                                     if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
@@ -345,10 +343,9 @@ task.spawn(function()
                             namaSultanTerakhir = "TOTEM SUKSES!"
                             updateDashboard()
                         else
-                            -- DEBUG 2: BOT BUTA (TOTEM TIDAK ADA DI TAS / NAMA BEDA)
-                            namaSultanTerakhir = "GAGAL: TOTEM TIDAK DITEMUKAN!"
+                            namaSultanTerakhir = "GAGAL: TOTEM SEMBUNYI!"
                             updateDashboard()
-                            lastTotemPlace = os.time() -- Reset waktu agar tidak spam tulisan
+                            lastTotemPlace = os.time() 
                         end
                     end
                 end
