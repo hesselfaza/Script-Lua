@@ -1,34 +1,31 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V3.0 (TALON BYPASS & LURAPH DECRYPT)
+-- ETZO - HEADLESS AUTO FISH V4.2 (X-RAY LISTENER & FAST REEL)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
 local SELL_INTERVAL = 30
-
--- 🗿 KONFIGURASI AUTO TOTEM
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN (HURUF KECIL SEMUA)
+-- 🎯 TARGET IKAN (DITAMBAH IKAN MURAH UNTUK TES X-RAY)
 local TARGET_FISH = {
     ["golden megalodon"] = true,
     ["sophisticated angler"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
+    
+    -- TES DIAGNOSTIK: Hapus 3 baris ini nanti jika Discord sudah spam!
+    ["bass"] = true,
+    ["trout"] = true,
+    ["salmon"] = true,
 }
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
 
--- 1. UI INSTAN (SMART DASHBOARD)
 local guiParent = game:GetService("CoreGui")
-if not pcall(function() local _ = guiParent.Name end) then
-    guiParent = LocalPlayer:WaitForChild("PlayerGui")
-end
-
-if guiParent:FindFirstChild("EtzoBlackScreen") then
-    guiParent.EtzoBlackScreen:Destroy()
-end
+if not pcall(function() local _ = guiParent.Name end) then guiParent = LocalPlayer:WaitForChild("PlayerGui") end
+if guiParent:FindFirstChild("EtzoBlackScreen") then guiParent.EtzoBlackScreen:Destroy() end
 
 local blackScreen = Instance.new("ScreenGui")
 blackScreen.Name = "EtzoBlackScreen"
@@ -44,15 +41,12 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MENEMBUS ENKRIPSI TALON..."
+label.Text = "ETZO - MEMUAT MESIN X-RAY..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
 label.Parent = frame
 
-print("[ETZO] UI Dimuat. Memulai Bypass Jaringan...")
-
--- 2. EKSEKUSI JARINGAN (SAFE WAIT)
 task.spawn(function()
     local success, errorMessage = pcall(function()
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -60,222 +54,177 @@ task.spawn(function()
         local HttpService = game:GetService("HttpService")
         local VirtualUser = game:GetService("VirtualUser")
 
-        -- 🛡️ GPU SAVER & ANTI-AFK
-        LocalPlayer.Idled:Connect(function()
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new())
-        end)
-
+        LocalPlayer.Idled:Connect(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end)
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
         game:GetService("Lighting").GlobalShadows = false
         RunService:Set3dRenderingEnabled(false)
 
-        -- 🔗 DEKRIPSI JARINGAN (DYNAMIC RESOLVER)
         local Packages = ReplicatedStorage:WaitForChild("Packages", 30)
         local _Index = Packages:WaitForChild("_Index", 30)
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
-        -- Menggunakan data dump Anda untuk memanggil remote yang tepat
-        local EquipTool    = net:FindFirstChild("RE/}Fwmr+EF:{IIDuDMgh@") or net:WaitForChild("RE/EquipToolFromHotbar", 10)
-        local ChargeRod    = net:FindFirstChild("RF/{=cvi<{@A>@H> D=") or net:WaitForChild("RF/ChargeFishingRod", 10)
-        local RequestGame  = net:FindFirstChild("RF/+:sygJJ|7I?CE5\"Bsp5c?=)B7EM85") or net:WaitForChild("RF/RequestFishingMinigameStarted", 10)
-        
-        -- PERUBAHAN FATAL DARI TALON: FishingCompleted dihapus, diganti CatchFishCompleted
-        local CompleteGame = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk") or net:WaitForChild("RF/CatchFishCompleted", 10)
-        
-        local CancelInput  = net:FindFirstChild("RF/{6pggC{@A>@H>vCIz{A") or net:WaitForChild("RF/CancelFishingInputs", 10)
-        local SellAll      = net:FindFirstChild("RF/,:npCCB B;DM") or net:WaitForChild("RF/SellAllItems", 10)
-        local ObtainedNewFish = net:FindFirstChild("RE/(7vekE;;{;N @A='t{7h;;7B?BG") or net:WaitForChild("RE/ObtainedNewFishNotification", 10)
-        local FavoriteItem = net:FindFirstChild("RE/~6xst@J<vJ<G") or net:WaitForChild("RE/FavoriteItem", 10)
-
-        -- 📡 SISTEM WEBHOOK & PENGHITUNG IKAN
         local totalCaught = 0
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         
         pcall(function()
             HttpRequest({
-                Url = WEBHOOK_URL,
-                Method = "POST",
-                Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({
-                    username = "Etzo Store System",
-                    content = "🟢 **ETZO BOT V3 (BYPASSED) AKTIF!**\nAkun `" .. LocalPlayer.Name .. "` berhasil menembus enkripsi dan memancing."
-                })
+                Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V4.2 AKTIF!**\nMesin X-Ray memantau akun `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
-        local RARITY_MAP = {
-            [1] = {Name = "Common", Color = 0x9e9e9e}, [2] = {Name = "Uncommon", Color = 0x4caf50},
-            [3] = {Name = "Rare", Color = 0x2196f3}, [4] = {Name = "Epic", Color = 0x9c27b0},
-            [5] = {Name = "Legendary", Color = 0xff9800}, [6] = {Name = "Mythic", Color = 0xf44336},
-            [7] = {Name = "Secret", Color = 0xff1744},
-        }
-
-        local function SendWebhook(fishName, tier, weight)
+        local function SendWebhook(fishName)
             if WEBHOOK_URL == "" then return end
-            local rarityInfo = RARITY_MAP[tier] or {Name = "Unknown", Color = 0xffffff}
             local payload = {
                 username = "Etzo Bot",
                 embeds = {{
-                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = rarityInfo.Color,
+                    title = "🎣 Target / Tes Ikan Terdeteksi!", color = 0x2196f3,
                     fields = {
                         { name = "Akun", value = LocalPlayer.Name, inline = true },
-                        { name = "Ikan", value = fishName, inline = true },
-                        { name = "Rarity", value = rarityInfo.Name, inline = true },
-                        { name = "Berat", value = string.format("%.2f kg", weight or 0), inline = true },
+                        { name = "Data Mentah", value = fishName, inline = true },
                     }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
                 }}
             }
-            pcall(function()
-                HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) })
-            end)
+            pcall(function() HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }) end)
         end
 
-        -- PERCOBAAN MENGAKSES DATABASE (Bisa gagal karena Luraph)
-        local FishDB = {}
-        pcall(function()
-            for _, module in ipairs(ReplicatedStorage.Items:GetChildren()) do
-                if module:IsA("ModuleScript") then
-                    local ok, mod = pcall(require, module)
-                    local data = (mod and type(mod) == "table" and mod.Data) or mod
-                    if ok and data and data.Type == "Fish" then FishDB[data.Id] = data end
+        -- ==========================================
+        -- ☢️ X-RAY DEEP SCANNER (MENEMBUS LURAPH)
+        -- ==========================================
+        local function xRayScan(data, checked)
+            checked = checked or {}
+            if type(data) ~= "table" then return nil end
+            if checked[data] then return nil end
+            checked[data] = true
+            
+            for k, v in pairs(data) do
+                if type(v) == "string" then
+                    local cleanStr = string.lower(string.gsub(v, "_", " "))
+                    -- Deteksi paksa kata kunci ikan di dalam data acak
+                    if string.find(cleanStr, "fish") or string.find(cleanStr, "megalodon") or string.find(cleanStr, "kraken") or string.find(cleanStr, "leviathan") or string.find(cleanStr, "angler") or string.find(cleanStr, "ruby") or string.find(cleanStr, "bass") or string.find(cleanStr, "trout") or string.find(cleanStr, "salmon") then
+                        return v
+                    end
+                elseif type(v) == "table" then
+                    local res = xRayScan(v, checked)
+                    if res then return res end
                 end
             end
-        end)
+            return nil
+        end
 
-        -- ==========================================
-        -- 🛡️ LURAPH BYPASS & AUTO FAVORITE
-        -- ==========================================
-        ObtainedNewFish.OnClientEvent:Connect(function(_, weightData, wrapper)
-            if not wrapper or not wrapper.InventoryItem then return end
-            
-            totalCaught = totalCaught + 1
-            local totemStatus = AUTO_TOTEM and "ON" or "OFF"
-            label.Text = string.format("ETZO - BOT V3 AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan: %d", totemStatus, totalCaught)
+        local processedFish = {}
+        for _, remote in ipairs(net:GetChildren()) do
+            if remote:IsA("RemoteEvent") then
+                remote.OnClientEvent:Connect(function(...)
+                    local args = {...}
+                    local rawFishData = nil
+                    
+                    for _, arg in pairs(args) do
+                        if type(arg) == "table" then
+                            rawFishData = xRayScan(arg)
+                        elseif type(arg) == "string" then
+                            local cStr = string.lower(string.gsub(arg, "_", " "))
+                            if string.find(cStr, "fish") or string.find(cStr, "megalodon") or string.find(cStr, "kraken") or string.find(cStr, "ruby") or string.find(cStr, "bass") then
+                                rawFishData = arg
+                            end
+                        end
+                        if rawFishData then break end
+                    end
+                    
+                    if rawFishData then
+                        -- Mencegah spam ganda dari event yang dienkripsi
+                        if processedFish[rawFishData] and (os.time() - processedFish[rawFishData] < 2) then return end
+                        processedFish[rawFishData] = os.time()
+                        
+                        totalCaught = totalCaught + 1
+                        label.Text = string.format("ETZO - BOT V4.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Total Ikan: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
 
-            local item = wrapper.InventoryItem
-            if not item.Id then return end
-            
-            -- ANTI-LURAPH: Jika db gagal dibaca, ambil ID asli ikan dari server lalu hilangkan garis bawahnya (_)
-            local fishData = FishDB[item.Id]
-            local rawName = fishData and fishData.Name or tostring(item.Id)
-            local cleanName = string.lower(string.gsub(rawName, "_", " ")) -- "golden_megalodon" jadi "golden megalodon"
-            
-            local fTier = fishData and fishData.Tier or (weightData and weightData.Tier) or 1
-            local fWeight = weightData and weightData.Weight or 0
-            local isTarget = false
-            
-            -- PENGAMAN GEMSTONE RUBY
-            if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
-                isTarget = true
-                pcall(function()
-                    local uniqueId = wrapper.Id or item.InstanceId or item.UUID or item.Id
-                    if FavoriteItem:IsA("RemoteEvent") then
-                        FavoriteItem:FireServer(uniqueId, true)
-                        FavoriteItem:FireServer(uniqueId)
-                    else
-                        FavoriteItem:InvokeServer(uniqueId, true)
+                        local cleanName = string.lower(string.gsub(rawFishData, "_", " "))
+                        local isTarget = false
+                        
+                        -- Bypass Favorite khusus Gemstone Ruby sementara
+                        if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
+                            isTarget = true
+                            print("[ETZO] Gemstone Ruby Terdeteksi oleh X-Ray!")
+                        end
+                        
+                        for targetName, _ in pairs(TARGET_FISH) do
+                            if string.find(cleanName, targetName) then isTarget = true; break end
+                        end
+                        
+                        if isTarget then SendWebhook(rawFishData) end
                     end
                 end)
-                print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
             end
-            
-            for targetName, _ in pairs(TARGET_FISH) do
-                if string.find(cleanName, targetName) then
-                    isTarget = true
-                    break
-                end
+        end
+
+        -- ⚡ FAST REEL (MINIGAME KILLER)
+        local isFarming = true
+        task.spawn(function()
+            while isFarming do
+                task.wait(0.2)
+                local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
+                local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
+                if catchEnc then task.spawn(function() pcall(function() catchEnc:InvokeServer() end) end) end
+                if catchPlain then task.spawn(function() pcall(function() catchPlain:InvokeServer() end) end) end
             end
-            
-            if isTarget then SendWebhook(rawName, fTier, fWeight) end
         end)
 
         -- 💰 AUTO SELL
-        local isFarming = true
         if AUTO_SELL then
             task.spawn(function()
                 while isFarming do
                     task.wait(SELL_INTERVAL)
-                    pcall(function()
-                        if SellAll:IsA("RemoteFunction") then SellAll:InvokeServer() else SellAll:FireServer() end
-                    end)
+                    local sellRemote = nil
+                    for _, r in ipairs(net:GetChildren()) do
+                        if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
+                            sellRemote = r; break
+                        end
+                    end
+                    if sellRemote then pcall(function() sellRemote:InvokeServer() end) end
                 end
             end)
         end
 
-        -- 🎣 FISHING & BACKPACK SCANNER LOGIC
+        -- 🗿 AUTO TOTEM
         local lastTotemPlace = 0
-
-        local function startFarming()
-            pcall(function() CancelInput:InvokeServer() end)
-            task.wait(1)
-            
+        task.spawn(function()
             while isFarming do
+                task.wait(1)
                 if AUTO_TOTEM and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
                     local char = LocalPlayer.Character
                     local backpack = LocalPlayer:FindFirstChild("Backpack")
-                    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
                     
-                    if char and backpack and humanoid then
+                    if char and backpack and hum then
                         local totemTool = nil
                         for _, invItem in ipairs(char:GetChildren()) do
-                            if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then
-                                totemTool = invItem; break
-                            end
+                            if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then totemTool = invItem; break end
                         end
                         if not totemTool then
                             for _, invItem in ipairs(backpack:GetChildren()) do
-                                if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then
-                                    totemTool = invItem; break
-                                end
+                                if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then totemTool = invItem; break end
                             end
                         end
+                        
                         if totemTool then
-                            humanoid:EquipTool(totemTool)
+                            hum:EquipTool(totemTool)
                             task.wait(0.5)
                             VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(500, 500)); task.wait(1)
+                            for _, r in ipairs(net:GetChildren()) do
+                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equiptool") or string.find(r.Name, "}Fwmr")) then
+                                    pcall(function() r:FireServer(1) end); break
+                                end
+                            end
                             lastTotemPlace = os.time()
                         end
                     end
                 end
-
-                local currentArgs = {-1.233, 1, workspace:GetServerTimeNow()}
-                pcall(function()
-                    if EquipTool:IsA("RemoteEvent") then EquipTool:FireServer(1) else EquipTool:InvokeServer(1) end
-                end) 
-                task.wait(0.2)
-                
-                task.spawn(function() pcall(function() if ChargeRod:IsA("RemoteFunction") then ChargeRod:InvokeServer() else ChargeRod:FireServer() end end) end)
-                task.wait(0.1)
-                task.spawn(function() pcall(function() if RequestGame:IsA("RemoteFunction") then RequestGame:InvokeServer(unpack(currentArgs)) else RequestGame:FireServer(unpack(currentArgs)) end end) end)
-                
-                task.wait(1.5)
-                for i = 1, 20 do
-                    if not isFarming then break end
-                    pcall(function() 
-                        -- BYPASS: Karena CompleteGame sekarang jadi RemoteFunction
-                        if CompleteGame:IsA("RemoteFunction") then
-                            CompleteGame:InvokeServer()
-                        else
-                            CompleteGame:FireServer()
-                        end
-                    end)
-                    task.wait(0.1)
-                end
-                
-                pcall(function() if CancelInput:IsA("RemoteFunction") then CancelInput:InvokeServer() else CancelInput:FireServer() end end)
-                task.wait(0.8)
             end
-        end
-
-        task.spawn(startFarming)
-        label.Text = string.format("ETZO - BOT V3 AKTIF\n[ Mode: Legit Auto-Shake ]\n[ Auto Totem: %s ]\n\n🐟 Total Ikan Ditangkap: 0", AUTO_TOTEM and "ON" or "OFF")
-        label.TextColor3 = Color3.new(0, 1, 0)
+        end)
+        
+        label.Text = "ETZO - BOT V4.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Total Ikan: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-
-    if not success then
-        label.Text = "ETZO V3 - ERROR!\n" .. tostring(errorMessage)
-        label.TextColor3 = Color3.new(1, 0, 0)
-    end
+    if not success then label.Text = "ETZO V4.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
