@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V6.3 (VALUE-ONLY SCANNER & UUID EXTRACTOR)
+-- ETZO - HEADLESS AUTO FISH V7.0 (TRUE GHOST & SAFE STRINGIFIER)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -44,7 +44,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V6.3 VALUE SCANNER..."
+label.Text = "ETZO - MEMUAT V7.0 TRUE GHOST..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -72,7 +72,7 @@ task.spawn(function()
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V6.3 AKTIF!**\nSistem Pemindai Nilai (Anti-Luraph) siap." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V7.0 AKTIF!**\nSistem Safe Stringifier & Anti-Tertukar menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -92,56 +92,41 @@ task.spawn(function()
         end
 
         -- ==========================================
-        -- ☢️ VALUE-ONLY SCANNER (ANTI KEY-ENCRYPTION)
+        -- ☢️ SAFE STRINGIFIER (ANTI-CRASH)
         -- ==========================================
-        local function scanForItemData(args)
-            local foundId = nil
-            local uniqueId = nil
-            local isItemStructure = false
-            
-            local function searchTable(t, depth)
-                if depth > 5 or type(t) ~= "table" then return end
-                
-                -- Memastikan ini adalah tabel item (memiliki nilai angka seperti berat/tier)
-                for _, v in pairs(t) do
-                    if type(v) == "number" then isItemStructure = true end
+        -- Fungsi ini mengekstrak semua teks dari dalam paket data tanpa peduli seberapa tebal enkripsinya
+        local function safeExtractStrings(t, depth)
+            if depth > 5 or type(t) ~= "table" then return "" end
+            local str = ""
+            for _, v in pairs(t) do
+                if type(v) == "string" then
+                    str = str .. " " .. string.lower(v)
+                elseif type(v) == "table" then
+                    str = str .. safeExtractStrings(v, depth + 1)
                 end
-                
+            end
+            return str
+        end
+
+        local function getUUID(args)
+            local uuid = nil
+            local function search(t, depth)
+                if depth > 5 or type(t) ~= "table" then return end
                 for _, v in pairs(t) do
-                    if type(v) == "string" then
-                        -- 1. Mencari kode unik (UUID) untuk fitur Favorite
-                        if string.match(v, "%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x") then
-                            uniqueId = v
-                        end
-                        
-                        -- 2. Mencari nama ikan (Membatasi panjang string agar tidak membaca chat/pesan sistem)
-                        if string.len(v) < 35 then
-                            local cStr = string.lower(string.gsub(v, "_", " "))
-                            for targetName, _ in pairs(TARGET_FISH) do
-                                if string.find(cStr, targetName) then
-                                    foundId = v
-                                end
-                            end
-                        end
-                    elseif type(v) == "table" and not foundId then
-                        searchTable(v, depth + 1)
+                    if type(v) == "string" and string.match(v, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                        uuid = v; return
+                    elseif type(v) == "table" and not uuid then
+                        search(v, depth + 1)
                     end
                 end
             end
-            
             for _, arg in pairs(args) do
-                if type(arg) == "table" then searchTable(arg, 1) end
-                if foundId then break end
+                if type(arg) == "table" then search(arg, 1) end
             end
-            
-            -- Hanya kembalikan nilai jika bentuknya benar-benar struktur data item, bukan teks chat
-            if foundId and isItemStructure then
-                return foundId, uniqueId
-            end
-            return nil, nil
+            return uuid
         end
 
-        local processedFish = {}
+        local lastFishTime = 0
         
         -- ==========================================
         -- ⚡ PRECISE FAST REEL
@@ -165,47 +150,70 @@ task.spawn(function()
 
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
+                -- 1. PEMICU FAST REEL
                 if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
+                -- 2. PENYADAP IKAN
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
-                    local rawFishData, uniqueIdObj = scanForItemData(args)
                     
-                    if rawFishData then
-                        if processedFish[rawFishData] and (os.time() - processedFish[rawFishData] < 3) then return end
-                        processedFish[rawFishData] = os.time()
+                    -- BLOKIR KEPEMILIKAN: Jika ada nama player lain di data ini, abaikan!
+                    local isOtherPlayer = false
+                    for _, arg in pairs(args) do
+                        if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then
+                            isOtherPlayer = true
+                        end
+                    end
+                    if isOtherPlayer then return end
+                    
+                    -- Ekstrak data mentah menjadi teks panjang
+                    local dataStr = ""
+                    for _, arg in pairs(args) do
+                        if type(arg) == "table" then
+                            dataStr = dataStr .. safeExtractStrings(arg, 1)
+                        elseif type(arg) == "string" then
+                            dataStr = dataStr .. " " .. string.lower(arg)
+                        end
+                    end
+                    
+                    -- Bersihkan dari garis bawah (Luraph Obfuscation)
+                    dataStr = string.gsub(dataStr, "_", " ")
+                    
+                    local caughtFish = nil
+                    for targetName, _ in pairs(TARGET_FISH) do
+                        if string.find(dataStr, targetName) then
+                            caughtFish = targetName
+                            break
+                        end
+                    end
+                    
+                    if caughtFish then
+                        -- Mencegah notifikasi berlipat ganda dari berbagai remote
+                        if (os.time() - lastFishTime) < 2 then return end
+                        lastFishTime = os.time()
                         
                         totalCaught = totalCaught + 1
-                        label.Text = string.format("ETZO - BOT V6.3 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
+                        label.Text = string.format("ETZO - BOT V7.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: %d\n🎣 Terakhir: %s", totalCaught, string.upper(caughtFish))
 
-                        local cleanName = string.lower(string.gsub(rawFishData, "_", " "))
-                        local isTarget = false
-                        
-                        -- LOGIKA GEMSTONE RUBY
-                        if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
-                            isTarget = true
-                            for _, r in ipairs(net:GetChildren()) do
-                                if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
-                                    local uId = uniqueIdObj or rawFishData
-                                    task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uId, true) elseif r:IsA("RemoteEvent") then r:FireServer(uId, true) end end) end)
+                        -- LOGIKA GEMSTONE RUBY FAVORIT
+                        if caughtFish == "ruby" and string.find(dataStr, "gemstone") then
+                            local uuid = getUUID(args)
+                            if uuid then
+                                for _, r in ipairs(net:GetChildren()) do
+                                    if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
+                                        task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) end end) end)
+                                    end
                                 end
+                                print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
                             end
-                            print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
+                            SendWebhook("Gemstone Ruby")
+                        elseif caughtFish == "ruby" and not string.find(dataStr, "gemstone") then
+                            -- Abaikan Ruby biasa
+                        else
+                            SendWebhook(caughtFish)
                         end
-                        
-                        for targetName, _ in pairs(TARGET_FISH) do
-                            if targetName == "ruby" then
-                                if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
-                                    isTarget = true; break
-                                end
-                            elseif string.find(cleanName, targetName) then 
-                                isTarget = true; break 
-                            end
-                        end
-                        
-                        if isTarget then SendWebhook(rawFishData) end
                     end
                 end)
             end
@@ -266,7 +274,7 @@ task.spawn(function()
             end
         end)
         
-        label.Text = "ETZO - BOT V6.3 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: 0\n🎣 Terakhir: Menunggu tangkapan..."
+        label.Text = "ETZO - BOT V7.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-    if not success then label.Text = "ETZO V6.3 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V7.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
