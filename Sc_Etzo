@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V9.0 (FINAL PRODUCTION RELEASE)
+-- ETZO - HEADLESS AUTO FISH V9.1 (FINAL PRODUCTION & TOTEM FIX)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,11 +7,11 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN
+-- 🎯 TARGET IKAN (Daftar Sultan & Boss Laut Dalam)
 local TARGET_FISH = {
     ["king crab"] = true,
     ["queen crab"] = true,
-    ["qiant squid"] = true,
+    ["giant squid"] = true, 
     ["panther eel"] = true,
     ["depthseeker ray"] = true,
     ["robot kraken"] = true,
@@ -23,7 +23,10 @@ local TARGET_FISH = {
     ["gladiator shark"] = true,
     ["cryoshade glider"] = true,
     ["ancient lochness monster"] = true,
-    ["ruby"] = true, 
+    ["golden megalodon"] = true,
+    ["abyssal kraken"] = true,
+    ["void leviathan"] = true,
+    ["ruby"] = true,
 }
 
 local Players = game:GetService("Players")
@@ -48,7 +51,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V9.0 FINAL RELEASE..."
+label.Text = "ETZO - MEMUAT V9.1 FINAL..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -95,14 +98,14 @@ task.spawn(function()
         local isLockingItem = false -- 🛑 REM DARURAT AUTO SELL
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V9.0 FINAL\n[ Mode: Fast Reel ]\n[ Filter: Strict ]\n\n Semua Ikan Ditarik: %d\n Ikan pilihan: %d\n🎣 Terakhir (pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V9.1 FINAL\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Pilihan: %d\n🎣 Terakhir (Pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V9.0 FINAL AKTIF!**\nSistem produksi penuh menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V9.1 FINAL AKTIF!**\nSistem produksi penuh menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -254,72 +257,3 @@ task.spawn(function()
                                 end)
 
                                 print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby difavoritkan.")
-                                SendWebhook("Gemstone Ruby (AUTO-LOCKED 🛡️)")
-                            else
-                                SendWebhook(caughtSultan)
-                            end
-                        end
-                    end
-                    updateDashboard()
-                end)
-            end
-        end
-
-        local isFarming = true
-        updateDashboard()
-
-        -- 💰 AUTO SELL (SCATTERSHOT AMAN)
-        if AUTO_SELL then
-            task.spawn(function()
-                while isFarming do
-                    task.wait(SELL_INTERVAL)
-                    if not isLockingItem then
-                        for _, r in ipairs(net:GetChildren()) do
-                            if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
-                                task.spawn(function() pcall(function() r:InvokeServer() end) end)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-
-        -- 🗿 AUTO TOTEM 
-        local lastTotemPlace = 0
-        task.spawn(function()
-            while isFarming do
-                task.wait(1)
-                if AUTO_TOTEM and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
-                    local char = LocalPlayer.Character
-                    local backpack = LocalPlayer:FindFirstChild("Backpack")
-                    local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-                    if char and backpack and hum then
-                        local totemTool = nil
-                        for _, invItem in ipairs(char:GetChildren()) do
-                            if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then totemTool = invItem; break end
-                        end
-                        if not totemTool then
-                            for _, invItem in ipairs(backpack:GetChildren()) do
-                                if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then totemTool = invItem; break end
-                            end
-                        end
-
-                        if totemTool then
-                            hum:EquipTool(totemTool)
-                            task.wait(0.5)
-                            VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(500, 500)); task.wait(1)
-                            for _, r in ipairs(net:GetChildren()) do
-                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equiptool") or string.find(r.Name, "}Fwmr")) then
-                                    pcall(function() r:FireServer(1) end); break
-                                end
-                            end
-                            lastTotemPlace = os.time()
-                        end
-                    end
-                end
-            end
-        end)
-    end)
-    if not success then label.Text = "ETZO V9.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
-end)
