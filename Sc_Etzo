@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V8.5 (SAFE FAVORITE TESTER EDITION)
+-- ETZO - HEADLESS AUTO FISH V8.6 (SCATTERSHOT RESTORED & SAFE DELAY)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -9,8 +9,9 @@ local TOTEM_INTERVAL = 180
 
 -- 🧪 PENGATURAN TES AUTO-FAVORITE (Tulis huruf kecil semua)
 -- Ganti dengan ikan murah dan mutasi yang sering Anda dapatkan untuk tes.
-local TEST_FAV_FISH = "sophisticated angler"       -- Contoh: "bass", "salmon", "mackerel"
-local TEST_FAV_MUTATION = "shiny", "gold", "albino"  -- Contoh: "shiny", "sparkling", "giant"
+-- Catatan: Hanya masukkan SATU mutasi pada satu waktu untuk pengetesan.
+local TEST_FAV_FISH = "sophisticated angler"       
+local TEST_FAV_MUTATION = "gold"  
 
 -- 🎯 TARGET IKAN SULTAN
 local TARGET_FISH = {
@@ -18,7 +19,7 @@ local TARGET_FISH = {
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
     ["sophisticated angler"] = true,
-    ["ruby"] = true, 
+    ["ruby"] = true,
     [TEST_FAV_FISH] = true, -- Otomatis memasukkan ikan tes Anda ke daftar pantauan
 }
 
@@ -44,7 +45,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V8.5 FAVORITE TESTER..."
+label.Text = "ETZO - MEMUAT V8.6 SAFE DELAY..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -88,16 +89,17 @@ task.spawn(function()
         local totalSemuaIkan = 0
         local totalIkanSultan = 0
         local namaSultanTerakhir = "Belum ada"
+        local isLockingItem = false -- 🛑 REM DARURAT AUTO SELL
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V8.5 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V8.6 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.5 AKTIF!**\nMode Pengujian Auto-Favorite menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.6 AKTIF!**\nAuto-Sell Scattershot & Safe Delay Favorite telah dipulihkan untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -135,7 +137,7 @@ task.spawn(function()
         end
 
         local processedUUIDs = {}
-        
+
         -- ⚡ PRECISE FAST REEL (TIDAK DIOTAK-ATIK)
         local isReeling = false
         local function triggerFastReel()
@@ -157,11 +159,11 @@ task.spawn(function()
                 if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
-                
-                -- 📦 RESEPSIONIS TAS (TIDAK DIOTAK-ATIK)
+
+                -- 📦 RESEPSIONIS TAS
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
-                    
+
                     local isOtherPlayer = false
                     for _, arg in pairs(args) do
                         if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then
@@ -169,7 +171,7 @@ task.spawn(function()
                         end
                     end
                     if isOtherPlayer then return end
-                    
+
                     local hasItemID = false
                     local function safeExtractAndTranslate(t, depth)
                         if depth > 5 or type(t) ~= "table" then return "" end
@@ -177,7 +179,7 @@ task.spawn(function()
                         pcall(function()
                             local idVal = t.Id or t.id or t.ItemId or t.itemId
                             if idVal then
-                                hasItemID = true 
+                                hasItemID = true
                                 if FishDB[idVal] then
                                     str = str .. " " .. FishDB[idVal]
                                 end
@@ -195,15 +197,15 @@ task.spawn(function()
 
                     local dataStr = safeExtractAndTranslate(args, 1)
                     if not hasItemID then return end
-                    
+
                     local uuid = getUUID(args)
                     if not uuid then return end
                     if processedUUIDs[uuid] then return end
-                    processedUUIDs[uuid] = true 
+                    processedUUIDs[uuid] = true
 
                     if string.len(dataStr) > 400 then return end
                     dataStr = string.lower(string.gsub(dataStr, "_", " "))
-                    
+
                     totalSemuaIkan = totalSemuaIkan + 1
 
                     local caughtSultan = nil
@@ -213,9 +215,8 @@ task.spawn(function()
                             break
                         end
                     end
-                    
+
                     if caughtSultan then
-                        -- LOGIKA FAVORIT (Ditambahkan kondisi tes, tanpa merusak aslinya)
                         local isGemstoneRuby = (caughtSultan == "ruby" and string.find(dataStr, "gemstone"))
                         local isTestFavorite = (caughtSultan == TEST_FAV_FISH and string.find(dataStr, TEST_FAV_MUTATION))
 
@@ -230,21 +231,30 @@ task.spawn(function()
                             else
                                 namaSultanTerakhir = caughtSultan
                             end
-                            
-                            -- 🛡️ PELATUK AUTO FAVORITE
+
+                            -- 🛡️ PELATUK AUTO FAVORITE (DENGAN JEDA SERVER & REM SELL)
                             if isGemstoneRuby or isTestFavorite then
-                                for _, r in ipairs(net:GetChildren()) do
-                                    if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
-                                        task.spawn(function() 
-                                            pcall(function() 
-                                                if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) 
-                                                elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) 
-                                                end 
-                                            end) 
-                                        end)
-                                    end
-                                end
+                                isLockingItem = true -- Menarik Rem Darurat Auto Sell!
                                 
+                                task.spawn(function()
+                                    task.wait(1.5) -- Memberikan waktu 1.5 detik agar item benar-benar masuk ke database server
+                                    
+                                    for _, r in ipairs(net:GetChildren()) do
+                                        if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
+                                            task.spawn(function()
+                                                pcall(function()
+                                                    if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true)
+                                                    elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true)
+                                                    end
+                                                end)
+                                            end)
+                                        end
+                                    end
+                                    
+                                    task.wait(1)
+                                    isLockingItem = false -- Melepas Rem Darurat Auto Sell
+                                end)
+
                                 if isGemstoneRuby then
                                     print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby difavoritkan.")
                                     SendWebhook("Gemstone Ruby (AUTO-LOCKED 🛡️)")
@@ -265,18 +275,20 @@ task.spawn(function()
         local isFarming = true
         updateDashboard()
 
-        -- 💰 AUTO SELL (TIDAK DIOTAK-ATIK)
+        -- 💰 AUTO SELL (DENGAN SISTEM SCATTERSHOT AMAN)
         if AUTO_SELL then
             task.spawn(function()
                 while isFarming do
                     task.wait(SELL_INTERVAL)
-                    local sellRemote = nil
-                    for _, r in ipairs(net:GetChildren()) do
-                        if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
-                            sellRemote = r; break
+                    -- Cek keamanan: Hanya jual item jika bot TIDAK SEDANG memfavoritkan barang langka
+                    if not isLockingItem then
+                        for _, r in ipairs(net:GetChildren()) do
+                            -- Menembak semua kemungkinan jalur Sell (Tanpa Break!)
+                            if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
+                                task.spawn(function() pcall(function() r:InvokeServer() end) end)
+                            end
                         end
                     end
-                    if sellRemote then pcall(function() sellRemote:InvokeServer() end) end
                 end
             end)
         end
@@ -290,7 +302,7 @@ task.spawn(function()
                     local char = LocalPlayer.Character
                     local backpack = LocalPlayer:FindFirstChild("Backpack")
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
-                    
+
                     if char and backpack and hum then
                         local totemTool = nil
                         for _, invItem in ipairs(char:GetChildren()) do
@@ -301,7 +313,7 @@ task.spawn(function()
                                 if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "luck totem") then totemTool = invItem; break end
                             end
                         end
-                        
+
                         if totemTool then
                             hum:EquipTool(totemTool)
                             task.wait(0.5)
@@ -318,5 +330,5 @@ task.spawn(function()
             end
         end)
     end)
-    if not success then label.Text = "ETZO V8.5 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V8.6 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
