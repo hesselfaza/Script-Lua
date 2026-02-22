@@ -7,11 +7,22 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN SULTAN (BERSIH)
+-- 🎯 TARGET IKAN
 local TARGET_FISH = {
-    ["golden megalodon"] = true,
-    ["abyssal kraken"] = true,
-    ["void leviathan"] = true,
+    ["king crab"] = true,
+    ["queen crab"] = true,
+    ["qiant squid"] = true,
+    ["panther eel"] = true,
+    ["depthseeker ray"] = true,
+    ["robot kraken"] = true,
+    ["mosasaur shark"] = true,
+    ["king jelly"] = true,
+    ["viridis lurker"] = true,
+    ["bone whale"] = true,
+    ["elshark gran maja"] = true,
+    ["gladiator shark"] = true,
+    ["cryoshade glider"] = true,
+    ["ancient lochness monster"] = true,
     ["ruby"] = true, 
 }
 
