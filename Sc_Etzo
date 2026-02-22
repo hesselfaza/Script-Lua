@@ -284,22 +284,24 @@ task.spawn(function()
             end)
         end
 
-        -- 🗿 AUTO TOTEM 
+        -- 🗿 AUTO TOTEM
         local lastTotemPlace = 0
         task.spawn(function()
-            local VirtualInputManager = game:GetService("VirtualInputManager")
+            local VirtualUser = game:GetService("VirtualUser")
             while isFarming do
                 task.wait(1)
-                if AUTO_TOTEM and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
+                -- Paksa interval jadi 15 detik HANYA UNTUK TESTING agar Anda tidak capek menunggu 3 menit
+                -- Nanti bisa dikembalikan ke TOTEM_INTERVAL (180) jika sudah berhasil
+                if AUTO_TOTEM and (os.time() - lastTotemPlace >= 15) then
                     local char = LocalPlayer.Character
                     local backpack = LocalPlayer:FindFirstChild("Backpack")
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
                     if char and backpack and hum then
-                        -- Simpan ingatan tentang pancingan yang sedang dipakai
                         local currentRod = char:FindFirstChildOfClass("Tool")
-                        
                         local totemTool = nil
+                        
+                        -- PENCARIAN
                         for _, invItem in ipairs(char:GetChildren()) do
                             if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "totem") then totemTool = invItem; break end
                         end
@@ -310,26 +312,28 @@ task.spawn(function()
                         end
 
                         if totemTool then
-                            -- 1. Equip Totem & Beri Jeda Nafas
+                            -- DEBUG 1: BOT MENEMUKAN TOTEM! Tampilkan di layar!
+                            namaSultanTerakhir = "MENANCAPKAN " .. string.upper(totemTool.Name) .. "..."
+                            updateDashboard()
+                            
+                            -- Pindah ke tangan
                             hum:EquipTool(totemTool)
                             task.wait(1.5) 
                             
-                            -- 2. Spam Klik Super Agresif (Mendukung Touchscreen Redfinger)
-                            for i = 1, 3 do
+                            -- Spam klik brutal (Kombinasi 3 metode penembus emulator)
+                            for i = 1, 5 do
                                 pcall(function() totemTool:Activate() end)
-                                pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(500, 500)) end)
-                                pcall(function() VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1); VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1) end)
+                                pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(0, 0)) end)
+                                pcall(function() VirtualUser:Button1Down(Vector2.new(0,0)); task.wait(0.1); VirtualUser:Button1Up(Vector2.new(0,0)) end)
                                 task.wait(0.5)
                             end
                             
-                            -- 3. JEDA PANJANG (Penting! Agar animasi menancap totem tidak batal)
-                            task.wait(2.5)
+                            task.wait(3) -- Tunggu animasi menancap selesai
                             
-                            -- 4. Kembalikan Pancingan ke Tangan dengan Aman
+                            -- Kembalikan pancingan
                             if currentRod and currentRod.Parent == backpack then
                                 hum:EquipTool(currentRod)
                             else
-                                -- Jalur Cadangan: Paksa panggil remote slot 1
                                 for _, r in ipairs(net:GetChildren()) do
                                     if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
                                         pcall(function() r:FireServer(1) end)
@@ -338,7 +342,13 @@ task.spawn(function()
                             end
                             
                             lastTotemPlace = os.time()
-                            print("[ETZO] Auto Totem Berhasil Dipasang!")
+                            namaSultanTerakhir = "TOTEM SUKSES!"
+                            updateDashboard()
+                        else
+                            -- DEBUG 2: BOT BUTA (TOTEM TIDAK ADA DI TAS / NAMA BEDA)
+                            namaSultanTerakhir = "GAGAL: TOTEM TIDAK DITEMUKAN!"
+                            updateDashboard()
+                            lastTotemPlace = os.time() -- Reset waktu agar tidak spam tulisan
                         end
                     end
                 end
