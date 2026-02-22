@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V8.1 (ID TRANSLATOR & UNIVERSAL COUNTER)
+-- ETZO - HEADLESS AUTO FISH V8.2 (STRICT UUID FILTER & ANTI-DOUBLE)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -38,7 +38,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V8.1 ID TRANSLATOR..."
+label.Text = "ETZO - MEMUAT V8.2 UUID FILTER..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -60,7 +60,7 @@ task.spawn(function()
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
-        -- 📚 MEMBANGUN KAMUS TERJEMAHAN ID (BYPASS LURAPH)
+        -- 📚 MEMBANGUN KAMUS TERJEMAHAN ID
         local FishDB = {}
         task.spawn(function()
             pcall(function()
@@ -85,14 +85,14 @@ task.spawn(function()
         local namaSultanTerakhir = "Belum ada"
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V8.1 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V8.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: UUID Strict (Anti-Dobel) ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.1 AKTIF!**\nSistem ID Translator memantau `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.2 AKTIF!**\nSistem Strict UUID (Anti Hitung Ganda) menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -111,12 +111,10 @@ task.spawn(function()
             pcall(function() HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }) end)
         end
 
-        -- ☢️ EKSTRAKTOR TEKS + PENERJEMAH ID ANGKA
         local function safeExtractAndTranslate(t, depth)
             if depth > 5 or type(t) ~= "table" then return "" end
             local str = ""
             
-            -- Jika server mengirimkan ID berupa angka, paksa terjemahkan ke nama ikan!
             pcall(function()
                 local idVal = t.Id or t.id or t.ItemId
                 if idVal and FishDB[idVal] then
@@ -152,8 +150,8 @@ task.spawn(function()
             return uuid
         end
 
-        local lastFishTime = 0
-        local officialFishRemote = nil
+        -- 🗄️ DATABASE BARCODE (Mencegah Hitung Ganda)
+        local processedUUIDs = {}
         
         -- ⚡ PRECISE FAST REEL
         local isReeling = false
@@ -177,7 +175,7 @@ task.spawn(function()
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 📦 RESEPSIONIS TAS (UNIVERSAL COUNTER)
+                -- 📦 RESEPSIONIS TAS (STRICT UUID)
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     
@@ -189,67 +187,58 @@ task.spawn(function()
                     end
                     if isOtherPlayer then return end
                     
-                    -- Paksa terjemahkan ID angka menjadi nama!
-                    local dataStr = safeExtractAndTranslate(args, 1)
+                    -- 🛡️ FILTER 1: MENCARI BARCODE (UUID)
+                    local uuid = getUUID(args)
+                    -- Jika data ini tidak punya Barcode fisik, berarti ini cuma animasi visual. BUANG!
+                    if not uuid then return end
                     
-                    -- Blokir Sinkronisasi Tas Penuh
+                    -- 🛡️ FILTER 2: MENCEGAH BARCODE GANDA
+                    if processedUUIDs[uuid] then return end
+                    processedUUIDs[uuid] = true -- Catat barcode ini agar tidak dihitung lagi
+
+                    -- Terjemahkan ID
+                    local dataStr = safeExtractAndTranslate(args, 1)
                     if string.len(dataStr) > 400 then return end
                     dataStr = string.lower(string.gsub(dataStr, "_", " "))
                     
-                    local isThisTheFishRemote = false
-                    local rName = remote.Name
+                    -- 🎉 INI DIA! Penghitung akan 100% akurat karena sudah melewati 2 filter di atas!
+                    totalSemuaIkan = totalSemuaIkan + 1
+
+                    -- CEK SULTAN
+                    local caughtSultan = nil
+                    for targetName, _ in pairs(TARGET_FISH) do
+                        if string.find(dataStr, targetName) then
+                            caughtSultan = targetName
+                            break
+                        end
+                    end
                     
-                    if string.find(string.lower(rName), "obtainednewfish") or string.find(rName, "7vek") or getUUID(args) then
-                        isThisTheFishRemote = true
-                    end
-                    if isThisTheFishRemote then officialFishRemote = remote end
-
-                    if remote == officialFishRemote or isThisTheFishRemote then
-                        if (os.time() - lastFishTime) < 1.5 then return end
-                        lastFishTime = os.time()
-
-                        -- PENGHITUNG GLOBAL BERTAMBAH
-                        totalSemuaIkan = totalSemuaIkan + 1
-
-                        -- CEK SULTAN (Sekarang dataStr sudah berisi nama ikan hasil terjemahan!)
-                        local caughtSultan = nil
-                        for targetName, _ in pairs(TARGET_FISH) do
-                            if string.find(dataStr, targetName) then
-                                caughtSultan = targetName
-                                break
-                            end
-                        end
-                        
-                        if caughtSultan then
-                            if caughtSultan == "ruby" and not string.find(dataStr, "gemstone") then
-                                -- Abaikan Ruby Biasa
+                    if caughtSultan then
+                        if caughtSultan == "ruby" and not string.find(dataStr, "gemstone") then
+                            -- Abaikan Ruby Biasa
+                        else
+                            totalIkanSultan = totalIkanSultan + 1
+                            if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
+                                namaSultanTerakhir = "Gemstone Ruby"
                             else
-                                totalIkanSultan = totalIkanSultan + 1
-                                if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
-                                    namaSultanTerakhir = "Gemstone Ruby"
-                                else
-                                    namaSultanTerakhir = caughtSultan
-                                end
-                                
-                                if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
-                                    local uuid = getUUID(args)
-                                    if uuid then
-                                        for _, r in ipairs(net:GetChildren()) do
-                                            if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
-                                                task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) end end) end)
-                                            end
-                                        end
-                                        print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
+                                namaSultanTerakhir = caughtSultan
+                            end
+                            
+                            if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
+                                for _, r in ipairs(net:GetChildren()) do
+                                    if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
+                                        task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) end end) end)
                                     end
-                                    SendWebhook("Gemstone Ruby")
-                                else
-                                    SendWebhook(caughtSultan)
                                 end
+                                print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
+                                SendWebhook("Gemstone Ruby")
+                            else
+                                SendWebhook(caughtSultan)
                             end
                         end
-                        
-                        updateDashboard()
                     end
+                    
+                    updateDashboard()
                 end)
             end
         end
@@ -310,5 +299,5 @@ task.spawn(function()
             end
         end)
     end)
-    if not success then label.Text = "ETZO V8.1 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V8.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
