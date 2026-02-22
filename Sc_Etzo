@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V10.0 (SMART UI & AI SPY)
+-- ETZO - HEADLESS AUTO FISH V10.1 (FULLY AUTONOMOUS GHOST SPY)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -44,7 +44,6 @@ blackScreen.ResetOnSpawn = false
 blackScreen.Parent = guiParent
 
 local frame = Instance.new("Frame")
--- 🟢 SMART UI: Awalnya cuma banner di atas layar agar tidak menghalangi klik
 frame.Size = UDim2.new(1, 0, 0, 120) 
 frame.Position = UDim2.new(0, 0, 0, 0)
 frame.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -54,7 +53,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V10.0 AI SPY..."
+label.Text = "ETZO - MEMUAT V10.1 GHOST SPY..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 20
@@ -110,71 +109,11 @@ task.spawn(function()
 
         local function updateDashboard()
             if isLearning then
-                label.Text = string.format("ETZO - MENUNGGU CONTOH TOTEM\n\n⚠️ SILAKAN BUKA TAS & PASANG TOTEM MANUAL 1X SEKARANG! ⚠️\n(Layar akan otomatis hitam setelah sinyal disadap)")
-                label.TextColor3 = Color3.new(1, 0.3, 0.3) -- Merah peringatan
+                label.Text = string.format("ETZO - MENCARI TOMBOL UI TOTEM (GHOST CLICK)...")
             else
-                label.Text = string.format("ETZO - BOT V10.0 FINAL\n[ Mode: Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Pilihan: %d\n🎣 Terakhir (Pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
-                label.TextColor3 = Color3.new(1, 1, 0) -- Kuning normal
+                label.Text = string.format("ETZO - BOT V10.1 FINAL\n[ Mode: Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Pilihan: %d\n🎣 Terakhir (Pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+                label.TextColor3 = Color3.new(1, 1, 0)
             end
-        end
-
-        local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
-        pcall(function()
-            HttpRequest({
-                Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V10.0 AKTIF!**\nSistem AI Spy menyala untuk `" .. LocalPlayer.Name .. "`. Menunggu instruksi manual pertama..." })
-            })
-        end)
-
-        local function SendWebhook(fishName)
-            if WEBHOOK_URL == "" then return end
-            local payload = {
-                username = "Etzo Bot",
-                embeds = {{
-                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0x4caf50,
-                    fields = {
-                        { name = "Akun", value = LocalPlayer.Name, inline = true },
-                        { name = "Ikan", value = fishName, inline = true },
-                    }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-                }}
-            }
-            pcall(function() HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }) end)
-        end
-
-        local function getUUID(args)
-            local uuid = nil
-            local function search(t, depth)
-                if depth > 5 or type(t) ~= "table" then return end
-                for _, v in pairs(t) do
-                    if type(v) == "string" and string.match(v, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
-                        uuid = v; return
-                    elseif type(v) == "table" and not uuid then
-                        search(v, depth + 1)
-                    end
-                end
-            end
-            for _, arg in pairs(args) do
-                if type(arg) == "table" then search(arg, 1) end
-            end
-            return uuid
-        end
-
-        local processedUUIDs = {}
-
-        -- ⚡ PRECISE FAST REEL
-        local isReeling = false
-        local function triggerFastReel()
-            if isReeling then return end
-            isReeling = true
-            task.spawn(function()
-                task.wait(0.3)
-                local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
-                local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
-                pcall(function() if catchEnc then catchEnc:InvokeServer() end end)
-                pcall(function() if catchPlain then catchPlain:InvokeServer() end end)
-                task.wait(1.5)
-                isReeling = false
-            end)
         end
 
         -- 🕵️ PASANG ALAT PENYADAP DI JARINGAN
@@ -211,10 +150,10 @@ task.spawn(function()
                         totemMethod = method
                         totemArgs = args
                         isLearning = false 
-                        lastTotemPlace = os.time() -- Reset timer setelah belajar
+                        lastTotemPlace = os.time() 
                         
                         task.spawn(function()
-                            -- 🔴 TUTUP LAYAR MENJADI HITAM PEKAT!
+                            -- 🔴 TUTUP LAYAR MENJADI HITAM PEKAT INSTAN!
                             frame.Size = UDim2.new(1, 0, 1, 0) 
                             frame.BackgroundTransparency = 0 
                             namaSultanTerakhir = "SINYAL DICURI! (AFK AKTIF)"
@@ -227,22 +166,63 @@ task.spawn(function()
             return oldNamecall(self, ...)
         end))
 
+        -- 👻 EKSEKUTOR GHOST CLICK (AUTO CALIBRATION)
+        task.spawn(function()
+            task.wait(4) -- Beri waktu 4 detik agar UI Tas / Inventory game termuat sepenuhnya
+            if isLearning and getconnections then
+                for _, guiObj in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                    local isTarget = false
+                    -- Cari tombol UI yang berbau Totem
+                    if guiObj:IsA("TextButton") and string.find(string.lower(guiObj.Text), "totem") then isTarget = true end
+                    if (guiObj:IsA("ImageButton") or guiObj:IsA("TextButton")) and string.find(string.lower(guiObj.Name), "totem") then isTarget = true end
+                    
+                    if isTarget then
+                        -- Paksa eksekusi fungsi klik tombol tersebut secara gaib!
+                        pcall(function()
+                            for _, eventName in ipairs({"Activated", "MouseButton1Click", "MouseButton1Down"}) do
+                                for _, connection in ipairs(getconnections(guiObj[eventName])) do
+                                    connection:Fire() -- BOOM! Tombol tertekan sendiri!
+                                end
+                            end
+                        end)
+                    end
+                end
+                
+                -- Jika setelah 5 detik Ghost Click gagal (misal karena UI sangat diproteksi),
+                -- berikan peringatan terakhir ke layar untuk klik manual
+                task.wait(1)
+                if isLearning then
+                    label.Text = "ETZO - GHOST CLICK GAGAL\n\n⚠️ UI DIPROTEKSI. SILAKAN KLIK TOTEM DI TAS SEKALI SAJA UNTUK AFK! ⚠️"
+                    label.TextColor3 = Color3.new(1, 0.3, 0.3)
+                end
+            end
+        end)
+
+        -- (Sisa kode Fast Reel, Resepsionis Tas, dan Auto Sell sama persis seperti V10.0)
+        local function triggerFastReel()
+            if isReeling then return end
+            isReeling = true
+            task.spawn(function()
+                task.wait(0.3)
+                local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
+                local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
+                pcall(function() if catchEnc then catchEnc:InvokeServer() end end)
+                pcall(function() if catchPlain then catchPlain:InvokeServer() end end)
+                task.wait(1.5)
+                isReeling = false
+            end)
+        end
+
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
                 if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
 
-                -- 📦 RESEPSIONIS TAS
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
-
                     local isOtherPlayer = false
-                    for _, arg in pairs(args) do
-                        if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then
-                            isOtherPlayer = true
-                        end
-                    end
+                    for _, arg in pairs(args) do if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then isOtherPlayer = true end end
                     if isOtherPlayer then return end
 
                     local hasItemID = false
@@ -251,19 +231,11 @@ task.spawn(function()
                         local str = ""
                         pcall(function()
                             local idVal = t.Id or t.id or t.ItemId or t.itemId
-                            if idVal then
-                                hasItemID = true
-                                if FishDB[idVal] then
-                                    str = str .. " " .. FishDB[idVal]
-                                end
-                            end
+                            if idVal then hasItemID = true; if FishDB[idVal] then str = str .. " " .. FishDB[idVal] end end
                         end)
                         for _, v in pairs(t) do
-                            if type(v) == "string" then
-                                str = str .. " " .. string.lower(v)
-                            elseif type(v) == "table" then
-                                str = str .. safeExtractAndTranslate(v, depth + 1)
-                            end
+                            if type(v) == "string" then str = str .. " " .. string.lower(v)
+                            elseif type(v) == "table" then str = str .. safeExtractAndTranslate(v, depth + 1) end
                         end
                         return str
                     end
@@ -278,55 +250,33 @@ task.spawn(function()
 
                     if string.len(dataStr) > 400 then return end
                     dataStr = string.lower(string.gsub(dataStr, "_", " "))
-
                     totalSemuaIkan = totalSemuaIkan + 1
 
                     local caughtSultan = nil
                     for targetName, _ in pairs(TARGET_FISH) do
-                        if string.find(dataStr, targetName) then
-                            caughtSultan = targetName
-                            break
-                        end
+                        if string.find(dataStr, targetName) then caughtSultan = targetName; break end
                     end
 
                     if caughtSultan then
                         local isGemstoneRuby = (caughtSultan == "ruby" and string.find(dataStr, "gemstone"))
-
                         if caughtSultan == "ruby" and not isGemstoneRuby then
-                            -- Abaikan Ruby Biasa
+                            -- Abaikan
                         else
                             totalIkanSultan = totalIkanSultan + 1
-                            if isGemstoneRuby then
-                                namaSultanTerakhir = "Gemstone Ruby"
-                            else
-                                namaSultanTerakhir = caughtSultan
-                            end
+                            if isGemstoneRuby then namaSultanTerakhir = "Gemstone Ruby" else namaSultanTerakhir = caughtSultan end
 
-                            -- 🛡️ PELATUK AUTO FAVORITE GEMSTONE RUBY 
                             if isGemstoneRuby then
                                 isLockingItem = true 
-                                
                                 task.spawn(function()
                                     task.wait(1.5) 
                                     for _, r in ipairs(net:GetChildren()) do
                                         if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
-                                            task.spawn(function()
-                                                pcall(function()
-                                                    if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true)
-                                                    elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true)
-                                                    end
-                                                end)
-                                            end)
+                                            task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true) end end) end)
                                         end
                                     end
                                     task.wait(1)
                                     isLockingItem = false 
                                 end)
-
-                                print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby difavoritkan.")
-                                SendWebhook("Gemstone Ruby (AUTO-LOCKED 🛡️)")
-                            else
-                                SendWebhook(caughtSultan)
                             end
                         end
                     end
@@ -338,7 +288,6 @@ task.spawn(function()
         local isFarming = true
         updateDashboard()
 
-        -- 💰 AUTO SELL (SCATTERSHOT AMAN)
         if AUTO_SELL then
             task.spawn(function()
                 while isFarming do
@@ -354,28 +303,20 @@ task.spawn(function()
             end)
         end
 
-        -- 🚀 LOOP AUTO-TOTEM (MENGULANG SINYAL CURIAN)
         task.spawn(function()
             while isFarming do
                 task.wait(1)
-                
                 if AUTO_TOTEM and not isLearning and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
-                    
                     namaSultanTerakhir = "REPLIKASI TOTEM OTOMATIS..."
                     updateDashboard()
                     
-                    -- Tembakkan persis seperti yang Anda lakukan secara manual
                     pcall(function()
-                        if totemMethod == "InvokeServer" then
-                            totemRemote:InvokeServer(unpack(totemArgs))
-                        else
-                            totemRemote:FireServer(unpack(totemArgs))
-                        end
+                        if totemMethod == "InvokeServer" then totemRemote:InvokeServer(unpack(totemArgs))
+                        else totemRemote:FireServer(unpack(totemArgs)) end
                     end)
                     
                     task.wait(3) 
                     
-                    -- Kembalikan Pancingan ke Tangan (Slot 1)
                     for _, r in ipairs(net:GetChildren()) do
                         if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}fwmr")) then
                             pcall(function() r:FireServer(1) end) 
@@ -391,5 +332,5 @@ task.spawn(function()
         end)
 
     end)
-    if not success then label.Text = "ETZO V10.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V10.1 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
