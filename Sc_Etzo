@@ -11,7 +11,7 @@ local TOTEM_INTERVAL = 180
 local TARGET_FISH = {
     ["king crab"] = true,
     ["queen crab"] = true,
-    ["qiant squid"] = true,
+    ["giant squid"] = true,
     ["panther eel"] = true,
     ["depthseeker ray"] = true,
     ["robot kraken"] = true,
@@ -287,6 +287,7 @@ task.spawn(function()
         -- 🗿 AUTO TOTEM 
         local lastTotemPlace = 0
         task.spawn(function()
+            local VirtualInputManager = game:GetService("VirtualInputManager")
             while isFarming do
                 task.wait(1)
                 if AUTO_TOTEM and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
@@ -295,8 +296,10 @@ task.spawn(function()
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
                     if char and backpack and hum then
+                        -- Simpan ingatan tentang pancingan yang sedang dipakai
+                        local currentRod = char:FindFirstChildOfClass("Tool")
+                        
                         local totemTool = nil
-                        -- PENCARIAN UNIVERSAL: Cari barang apa saja yang punya kata "totem" di namanya
                         for _, invItem in ipairs(char:GetChildren()) do
                             if invItem:IsA("Tool") and string.find(string.lower(invItem.Name), "totem") then totemTool = invItem; break end
                         end
@@ -307,23 +310,33 @@ task.spawn(function()
                         end
 
                         if totemTool then
-                            -- 1. Pegang Totem di Tangan
+                            -- 1. Equip Totem & Beri Jeda Nafas
                             hum:EquipTool(totemTool)
-                            task.wait(0.5)
+                            task.wait(1.5) 
                             
-                            -- 2. Gunakan Totem (Metode Ganda agar kebal dari bug Emulator Redfinger)
-                            pcall(function() totemTool:Activate() end) -- Tembakan Pertama: Paksa fungsi asli barangnya
-                            VirtualUser:CaptureController()
-                            VirtualUser:ClickButton1(Vector2.new(500, 500)) -- Tembakan Kedua: Klik layar manual
-                            task.wait(1)
+                            -- 2. Spam Klik Super Agresif (Mendukung Touchscreen Redfinger)
+                            for i = 1, 3 do
+                                pcall(function() totemTool:Activate() end)
+                                pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(500, 500)) end)
+                                pcall(function() VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 1); VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 1) end)
+                                task.wait(0.5)
+                            end
                             
-                            -- 3. Kembalikan Pancingan ke Tangan (Pilih Slot 1)
-                            for _, r in ipairs(net:GetChildren()) do
-                                -- Kata kunci pencarian remote diperluas jadi "equip"
-                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
-                                    pcall(function() r:FireServer(1) end)
+                            -- 3. JEDA PANJANG (Penting! Agar animasi menancap totem tidak batal)
+                            task.wait(2.5)
+                            
+                            -- 4. Kembalikan Pancingan ke Tangan dengan Aman
+                            if currentRod and currentRod.Parent == backpack then
+                                hum:EquipTool(currentRod)
+                            else
+                                -- Jalur Cadangan: Paksa panggil remote slot 1
+                                for _, r in ipairs(net:GetChildren()) do
+                                    if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
+                                        pcall(function() r:FireServer(1) end)
+                                    end
                                 end
                             end
+                            
                             lastTotemPlace = os.time()
                             print("[ETZO] Auto Totem Berhasil Dipasang!")
                         end
