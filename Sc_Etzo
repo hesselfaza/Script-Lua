@@ -1,17 +1,26 @@
 -- ====================================================================
--- ETZO - SCRIPT
+-- ETZO SCRIPT
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
 local SELL_INTERVAL = 30
 
+-- 🎯 TARGET IKAN
 local TARGET_FISH = {
-    ["king crab"] = true, ["queen crab"] = true, ["giant squid"] = true, 
-    ["panther eel"] = true, ["depthseeker ray"] = true, ["robot kraken"] = true,
-    ["mosasaur shark"] = true, ["king jelly"] = true, ["viridis lurker"] = true,
-    ["bone whale"] = true, ["elshark gran maja"] = true, ["gladiator shark"] = true,
-    ["cryoshade glider"] = true, ["ancient lochness monster"] = true,
-    ["golden megalodon"] = true, ["abyssal kraken"] = true, ["void leviathan"] = true,
+    ["king crab"] = true,
+    ["queen crab"] = true,
+    ["qiant squid"] = true,
+    ["panther eel"] = true,
+    ["depthseeker ray"] = true,
+    ["robot kraken"] = true,
+    ["mosasaur shark"] = true,
+    ["king jelly"] = true,
+    ["viridis lurker"] = true,
+    ["bone whale"] = true,
+    ["elshark gran maja"] = true,
+    ["gladiator shark"] = true,
+    ["cryoshade glider"] = true,
+    ["ancient lochness monster"] = true,
     ["ruby"] = true, 
 }
 
@@ -30,14 +39,15 @@ blackScreen.ResetOnSpawn = false
 blackScreen.Parent = guiParent
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0) -- 🟢
+frame.Size = UDim2.new(1, 0, 1, 0)
 frame.BackgroundColor3 = Color3.new(0, 0, 0)
 frame.Parent = blackScreen
 
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.TextColor3 = Color3.new(0, 1, 0)
+label.Text = "ETZO - MEMUAT..."
+label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
 label.Parent = frame
@@ -66,83 +76,186 @@ task.spawn(function()
                         pcall(function()
                             local mod = require(module)
                             local data = type(mod) == "table" and (mod.Data or mod) or nil
-                            if data and data.Id then FishDB[tostring(data.Id)] = string.lower(data.Name or string.gsub(module.Name, "_", " ")) end
+                            if data and data.Id then
+                                local name = data.Name or string.gsub(module.Name, "_", " ")
+                                FishDB[data.Id] = string.lower(name)
+                                FishDB[tostring(data.Id)] = string.lower(name)
+                            end
                         end)
                     end
                 end
             end)
         end)
 
-        local totalSemuaIkan, totalIkanSultan = 0, 0
+        local totalSemuaIkan = 0
+        local totalIkanSultan = 0
         local namaSultanTerakhir = "Belum ada"
-        local isLockingItem = false 
+        local isLockingItem = false -- 🛑 REM DARURAT AUTO SELL
 
         local function updateDashboard()
-            label.Text = string.format("ETZO\nStatus: ON\n\n📦 Ditarik: %d\n🌟 Pilihan: %d\n🎣 Terakhir: %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO\n[ Mode: Fast Reel ]\n[ Filter: Strict ]\n\n Semua Ikan Ditarik: %d\n Ikan pilihan: %d\n🎣 Terakhir (pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
+        local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
+        pcall(function()
+            HttpRequest({
+                Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO BOT AKTIF!**\nSistem produksi penuh menyala untuk `" .. LocalPlayer.Name .. "`." })
+            })
+        end)
+
+        local function SendWebhook(fishName)
+            if WEBHOOK_URL == "" then return end
+            local payload = {
+                username = "Etzo Bot",
+                embeds = {{
+                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0x4caf50,
+                    fields = {
+                        { name = "Akun", value = LocalPlayer.Name, inline = true },
+                        { name = "Ikan", value = fishName, inline = true },
+                    }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+                }}
+            }
+            pcall(function() HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }) end)
+        end
+
+        local function getUUID(args)
+            local uuid = nil
+            local function search(t, depth)
+                if depth > 5 or type(t) ~= "table" then return end
+                for _, v in pairs(t) do
+                    if type(v) == "string" and string.match(v, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                        uuid = v; return
+                    elseif type(v) == "table" and not uuid then
+                        search(v, depth + 1)
+                    end
+                end
+            end
+            for _, arg in pairs(args) do
+                if type(arg) == "table" then search(arg, 1) end
+            end
+            return uuid
+        end
+
+        local processedUUIDs = {}
+
+        -- ⚡ PRECISE FAST REEL
         local isReeling = false
+        local function triggerFastReel()
+            if isReeling then return end
+            isReeling = true
+            task.spawn(function()
+                task.wait(0.3)
+                local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
+                local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
+                pcall(function() if catchEnc then catchEnc:InvokeServer() end end)
+                pcall(function() if catchPlain then catchPlain:InvokeServer() end end)
+                task.wait(1.5)
+                isReeling = false
+            end)
+        end
+
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
                 if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
-                    remote.OnClientEvent:Connect(function()
-                        if isReeling then return end
-                        isReeling = true
-                        task.spawn(function()
-                            task.wait(0.3)
-                            pcall(function() net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk"):InvokeServer() end)
-                            pcall(function() net:FindFirstChild("RF/CatchFishCompleted"):InvokeServer() end)
-                            task.wait(1.5)
-                            isReeling = false
-                        end)
-                    end)
+                    remote.OnClientEvent:Connect(triggerFastReel)
                 end
 
+                -- 📦 RESEPSIONIS TAS
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
-                    for _, arg in pairs(args) do if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then return end end
 
-                    local str = ""
-                    local function extract(t, d)
-                        if d > 5 or type(t) ~= "table" then return end
-                        pcall(function() local id = t.Id or t.id or t.ItemId or t.itemId; if id and FishDB[id] then str = str .. " " .. FishDB[id] end end)
-                        for _, v in pairs(t) do if type(v) == "string" then str = str .. " " .. string.lower(v) elseif type(v) == "table" then extract(v, d + 1) end end
+                    local isOtherPlayer = false
+                    for _, arg in pairs(args) do
+                        if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then
+                            isOtherPlayer = true
+                        end
                     end
-                    extract(args, 1)
-                    if str == "" then return end
-                    
-                    local uuid = nil
-                    local function getU(t, d)
-                        if d > 5 or type(t) ~= "table" then return end
-                        for _, v in pairs(t) do if type(v) == "string" and string.match(v, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then uuid = v; return elseif type(v) == "table" and not uuid then getU(v, d + 1) end end
+                    if isOtherPlayer then return end
+
+                    local hasItemID = false
+                    local function safeExtractAndTranslate(t, depth)
+                        if depth > 5 or type(t) ~= "table" then return "" end
+                        local str = ""
+                        pcall(function()
+                            local idVal = t.Id or t.id or t.ItemId or t.itemId
+                            if idVal then
+                                hasItemID = true
+                                if FishDB[idVal] then
+                                    str = str .. " " .. FishDB[idVal]
+                                end
+                            end
+                        end)
+                        for _, v in pairs(t) do
+                            if type(v) == "string" then
+                                str = str .. " " .. string.lower(v)
+                            elseif type(v) == "table" then
+                                str = str .. safeExtractAndTranslate(v, depth + 1)
+                            end
+                        end
+                        return str
                     end
-                    getU(args, 1)
+
+                    local dataStr = safeExtractAndTranslate(args, 1)
+                    if not hasItemID then return end
+
+                    local uuid = getUUID(args)
                     if not uuid then return end
+                    if processedUUIDs[uuid] then return end
+                    processedUUIDs[uuid] = true
 
-                    str = string.lower(string.gsub(str, "_", " "))
+                    if string.len(dataStr) > 400 then return end
+                    dataStr = string.lower(string.gsub(dataStr, "_", " "))
+
                     totalSemuaIkan = totalSemuaIkan + 1
 
-                    local caught = nil
-                    for tName, _ in pairs(TARGET_FISH) do if string.find(str, tName) then caught = tName; break end end
+                    local caughtSultan = nil
+                    for targetName, _ in pairs(TARGET_FISH) do
+                        if string.find(dataStr, targetName) then
+                            caughtSultan = targetName
+                            break
+                        end
+                    end
 
-                    if caught then
-                        local isGem = (caught == "ruby" and string.find(str, "gemstone"))
-                        if caught == "ruby" and not isGem then return end
-                        
-                        totalIkanSultan = totalIkanSultan + 1
-                        namaSultanTerakhir = isGem and "Gemstone Ruby" or caught
+                    if caughtSultan then
+                        local isGemstoneRuby = (caughtSultan == "ruby" and string.find(dataStr, "gemstone"))
 
-                        if isGem then
-                            isLockingItem = true 
-                            task.spawn(function()
-                                task.wait(1.5) 
-                                for _, r in ipairs(net:GetChildren()) do
-                                    if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
-                                        task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true) else r:FireServer(uuid, true) end end) end)
+                        if caughtSultan == "ruby" and not isGemstoneRuby then
+                            -- Abaikan Ruby Biasa
+                        else
+                            totalIkanSultan = totalIkanSultan + 1
+                            if isGemstoneRuby then
+                                namaSultanTerakhir = "Gemstone Ruby"
+                            else
+                                namaSultanTerakhir = caughtSultan
+                            end
+
+                            -- 🛡️ PELATUK AUTO FAVORITE GEMSTONE RUBY (DENGAN JEDA & REM)
+                            if isGemstoneRuby then
+                                isLockingItem = true 
+                                
+                                task.spawn(function()
+                                    task.wait(1.5) 
+                                    for _, r in ipairs(net:GetChildren()) do
+                                        if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
+                                            task.spawn(function()
+                                                pcall(function()
+                                                    if r:IsA("RemoteFunction") then r:InvokeServer(uuid, true)
+                                                    elseif r:IsA("RemoteEvent") then r:FireServer(uuid, true)
+                                                    end
+                                                end)
+                                            end)
+                                        end
                                     end
-                                end
-                                task.wait(1); isLockingItem = false 
-                            end)
+                                    task.wait(1)
+                                    isLockingItem = false 
+                                end)
+
+                                print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby difavoritkan.")
+                                SendWebhook("Gemstone Ruby (AUTO-LOCKED 🛡️)")
+                            else
+                                SendWebhook(caughtSultan)
+                            end
                         end
                     end
                     updateDashboard()
@@ -153,6 +266,7 @@ task.spawn(function()
         local isFarming = true
         updateDashboard()
 
+        -- 💰 AUTO SELL (SCATTERSHOT AMAN)
         if AUTO_SELL then
             task.spawn(function()
                 while isFarming do
@@ -167,6 +281,7 @@ task.spawn(function()
                 end
             end)
         end
+
     end)
-    if not success then label.Text = "ETZO V10.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
