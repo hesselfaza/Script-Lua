@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V9.0 (FINAL PRODUCTION RELEASE)
+-- ETZO - HEADLESS AUTO FISH V10.0 (SMART UI & AI SPY)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -11,7 +11,7 @@ local TOTEM_INTERVAL = 180
 local TARGET_FISH = {
     ["king crab"] = true,
     ["queen crab"] = true,
-    ["giant squid"] = true,
+    ["giant squid"] = true, 
     ["panther eel"] = true,
     ["depthseeker ray"] = true,
     ["robot kraken"] = true,
@@ -23,6 +23,9 @@ local TARGET_FISH = {
     ["gladiator shark"] = true,
     ["cryoshade glider"] = true,
     ["ancient lochness monster"] = true,
+    ["golden megalodon"] = true,
+    ["abyssal kraken"] = true,
+    ["void leviathan"] = true,
     ["ruby"] = true, 
 }
 
@@ -41,17 +44,21 @@ blackScreen.ResetOnSpawn = false
 blackScreen.Parent = guiParent
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0)
+-- 🟢 SMART UI: Awalnya cuma banner di atas layar agar tidak menghalangi klik
+frame.Size = UDim2.new(1, 0, 0, 120) 
+frame.Position = UDim2.new(0, 0, 0, 0)
 frame.BackgroundColor3 = Color3.new(0, 0, 0)
+frame.BackgroundTransparency = 0.2
 frame.Parent = blackScreen
 
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V9.0 FINAL RELEASE..."
+label.Text = "ETZO - MEMUAT V10.0 AI SPY..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
-label.TextSize = 24
+label.TextSize = 20
+label.TextWrapped = true
 label.Parent = frame
 
 task.spawn(function()
@@ -92,17 +99,30 @@ task.spawn(function()
         local totalSemuaIkan = 0
         local totalIkanSultan = 0
         local namaSultanTerakhir = "Belum ada"
-        local isLockingItem = false -- 🛑 REM DARURAT AUTO SELL
+        local isLockingItem = false 
+
+        -- Variabel AI Spy
+        local totemRemote = nil
+        local totemMethod = nil
+        local totemArgs = nil
+        local isLearning = true
+        local lastTotemPlace = os.time() 
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V9.0 FINAL\n[ Mode: Fast Reel ]\n[ Filter: Strict ]\n\n Semua Ikan Ditarik: %d\n Ikan pilihan: %d\n🎣 Terakhir (pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            if isLearning then
+                label.Text = string.format("ETZO - MENUNGGU CONTOH TOTEM\n\n⚠️ SILAKAN BUKA TAS & PASANG TOTEM MANUAL 1X SEKARANG! ⚠️\n(Layar akan otomatis hitam setelah sinyal disadap)")
+                label.TextColor3 = Color3.new(1, 0.3, 0.3) -- Merah peringatan
+            else
+                label.Text = string.format("ETZO - BOT V10.0 FINAL\n[ Mode: Fast Reel ]\n[ Filter: Strict ID-Card ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Pilihan: %d\n🎣 Terakhir (Pilihan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+                label.TextColor3 = Color3.new(1, 1, 0) -- Kuning normal
+            end
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V9.0 FINAL AKTIF!**\nSistem produksi penuh menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V10.0 AKTIF!**\nSistem AI Spy menyala untuk `" .. LocalPlayer.Name .. "`. Menunggu instruksi manual pertama..." })
             })
         end)
 
@@ -156,6 +176,56 @@ task.spawn(function()
                 isReeling = false
             end)
         end
+
+        -- 🕵️ PASANG ALAT PENYADAP DI JARINGAN
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            
+            if isLearning and (method == "FireServer" or method == "InvokeServer") then
+                local rName = string.lower(self.Name)
+                
+                if not string.find(rName, "mouse") and not string.find(rName, "ping") and not string.find(rName, "move") and not string.find(rName, "cam") and not string.find(rName, "catch") and not string.find(rName, "minigame") then
+                    
+                    local args = {...}
+                    local isSus = false
+                    
+                    local function check(t)
+                        if type(t) == "table" then
+                            for _, v in pairs(t) do
+                                if type(v) == "string" then
+                                    local str = string.lower(v)
+                                    if string.find(str, "totem") or string.match(str, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                                        isSus = true
+                                    end
+                                elseif type(v) == "table" then
+                                    check(v)
+                                end
+                            end
+                        end
+                    end
+                    check(args)
+                    
+                    if isSus then
+                        totemRemote = self
+                        totemMethod = method
+                        totemArgs = args
+                        isLearning = false 
+                        lastTotemPlace = os.time() -- Reset timer setelah belajar
+                        
+                        task.spawn(function()
+                            -- 🔴 TUTUP LAYAR MENJADI HITAM PEKAT!
+                            frame.Size = UDim2.new(1, 0, 1, 0) 
+                            frame.BackgroundTransparency = 0 
+                            namaSultanTerakhir = "SINYAL DICURI! (AFK AKTIF)"
+                            updateDashboard()
+                        end)
+                    end
+                end
+            end
+            
+            return oldNamecall(self, ...)
+        end))
 
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
@@ -232,7 +302,7 @@ task.spawn(function()
                                 namaSultanTerakhir = caughtSultan
                             end
 
-                            -- 🛡️ PELATUK AUTO FAVORITE GEMSTONE RUBY (DENGAN JEDA & REM)
+                            -- 🛡️ PELATUK AUTO FAVORITE GEMSTONE RUBY 
                             if isGemstoneRuby then
                                 isLockingItem = true 
                                 
@@ -273,7 +343,7 @@ task.spawn(function()
             task.spawn(function()
                 while isFarming do
                     task.wait(SELL_INTERVAL)
-                    if not isLockingItem then
+                    if not isLockingItem and not isLearning then
                         for _, r in ipairs(net:GetChildren()) do
                             if r:IsA("RemoteFunction") and (string.find(string.lower(r.Name), "sellall") or (string.find(r.Name, ",:np") and string.len(r.Name) > 12)) then
                                 task.spawn(function() pcall(function() r:InvokeServer() end) end)
@@ -284,108 +354,42 @@ task.spawn(function()
             end)
         end
 
-        -- 🗿 AUTO TOTEM
-        local lastTotemPlace = 0
+        -- 🚀 LOOP AUTO-TOTEM (MENGULANG SINYAL CURIAN)
         task.spawn(function()
-            local VirtualUser = game:GetService("VirtualUser")
             while isFarming do
                 task.wait(1)
-                -- Interval 15 detik untuk testing cepat
-                if AUTO_TOTEM and (os.time() - lastTotemPlace >= 15) then
-                    local char = LocalPlayer.Character
-                    local hum = char and char:FindFirstChildOfClass("Humanoid")
-
-                    if char and hum then
-                        local targetUUID = nil
-                        
-                        -- 🧠 TAHAP 1: PEMBAJAKAN MEMORI RAM (Membongkar brankas data LocalScript)
-                        namaSultanTerakhir = "MENYEKAN MEMORI RAM..."
-                        updateDashboard()
-                        
-                        pcall(function()
-                            -- getgc(true) akan menyedot seluruh data mentah yang ada di memori Delta
-                            for _, obj in pairs(getgc(true)) do
-                                if type(obj) == "table" then
-                                    local itemName = rawget(obj, "Name") or rawget(obj, "name") or rawget(obj, "ItemName")
-                                    if type(itemName) == "string" and string.find(string.lower(itemName), "totem") then
-                                        -- Ketemu tabel datanya! Sekarang cari kolom Barcode-nya
-                                        local uid = rawget(obj, "UUID") or rawget(obj, "uuid") or rawget(obj, "Id") or rawget(obj, "id") or rawget(obj, "InstanceID")
-                                        if type(uid) == "string" and string.match(uid, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
-                                            targetUUID = uid
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                        end)
-
-                        -- 🚀 TAHAP 2: PENYERBUAN SERVER
-                        if targetUUID then
-                            namaSultanTerakhir = "MERETAS BARCODE RAM..."
-                            updateDashboard()
-                            
-                            -- Tembakkan Barcode RAM hasil curian ke server!
-                            for _, r in ipairs(net:GetChildren()) do
-                                local rName = string.lower(r.Name)
-                                if not string.find(rName, "sell") and not string.find(rName, "drop") and not string.find(rName, "delete") then
-                                    if r:IsA("RemoteEvent") or r:IsA("RemoteFunction") then
-                                        local fire = r:IsA("RemoteFunction") and r.InvokeServer or r.FireServer
-                                        if string.find(rName, "equip") or string.find(rName, "use") or string.find(rName, "item") then
-                                            task.spawn(function() pcall(function() fire(r, targetUUID) end) end)
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            task.wait(2) -- Jeda 2 detik agar item fisiknya mendarat di karakter
-                            
-                            -- 🔨 TAHAP 3: TANGKAP DAN TANCAPKAN
-                            local totemTool = char:FindFirstChildOfClass("Tool")
-                            if not (totemTool and string.find(string.lower(totemTool.Name), "totem")) then
-                                totemTool = LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
-                            end
-                            
-                            if totemTool then
-                                namaSultanTerakhir = "MENANCAPKAN TOTEM..."
-                                updateDashboard()
-                                
-                                hum:EquipTool(totemTool)
-                                task.wait(1)
-                                
-                                -- Spam klik brutal
-                                for i = 1, 5 do
-                                    pcall(function() totemTool:Activate() end)
-                                    pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(0, 0)) end)
-                                    task.wait(0.5)
-                                end
-                                
-                                task.wait(3) -- Jeda animasi menancap
-                                
-                                -- Kembalikan ke pancingan slot 1
-                                for _, r in ipairs(net:GetChildren()) do
-                                    if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}fwmr")) then
-                                        pcall(function() r:FireServer(1) end) 
-                                        pcall(function() r:FireServer("1") end)
-                                    end
-                                end
-                                
-                                lastTotemPlace = os.time()
-                                namaSultanTerakhir = "TOTEM SUKSES!"
-                                updateDashboard()
-                            else
-                                namaSultanTerakhir = "GAGAL: FISIK DITAHAN SERVER"
-                                updateDashboard()
-                                lastTotemPlace = os.time()
-                            end
+                
+                if AUTO_TOTEM and not isLearning and (os.time() - lastTotemPlace >= TOTEM_INTERVAL) then
+                    
+                    namaSultanTerakhir = "REPLIKASI TOTEM OTOMATIS..."
+                    updateDashboard()
+                    
+                    -- Tembakkan persis seperti yang Anda lakukan secara manual
+                    pcall(function()
+                        if totemMethod == "InvokeServer" then
+                            totemRemote:InvokeServer(unpack(totemArgs))
                         else
-                            namaSultanTerakhir = "GAGAL: BARCODE RAM NIHIL"
-                            updateDashboard()
-                            lastTotemPlace = os.time()
+                            totemRemote:FireServer(unpack(totemArgs))
+                        end
+                    end)
+                    
+                    task.wait(3) 
+                    
+                    -- Kembalikan Pancingan ke Tangan (Slot 1)
+                    for _, r in ipairs(net:GetChildren()) do
+                        if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}fwmr")) then
+                            pcall(function() r:FireServer(1) end) 
+                            pcall(function() r:FireServer("1") end)
                         end
                     end
+                    
+                    lastTotemPlace = os.time()
+                    namaSultanTerakhir = "TOTEM SUKSES!"
+                    updateDashboard()
                 end
             end
         end)
+
     end)
-    if not success then label.Text = "ETZO V9.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V10.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
