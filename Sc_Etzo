@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V8.2 (STRICT UUID FILTER & ANTI-DOUBLE)
+-- ETZO - HEADLESS AUTO FISH V8.3 (STRICT ID-CARD VERIFIER)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -38,7 +38,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V8.2 UUID FILTER..."
+label.Text = "ETZO - MEMUAT V8.3 ID-CARD VERIFIER..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -85,14 +85,14 @@ task.spawn(function()
         local namaSultanTerakhir = "Belum ada"
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V8.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: UUID Strict (Anti-Dobel) ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V8.3 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ Filter: Strict ID-Card (Anti-Dobel) ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.2 AKTIF!**\nSistem Strict UUID (Anti Hitung Ganda) menyala untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.3 AKTIF!**\nSistem Penjaga Pintu (Anti Hitung Ganda Mutlak) menyala untuk `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -109,27 +109,6 @@ task.spawn(function()
                 }}
             }
             pcall(function() HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }) end)
-        end
-
-        local function safeExtractAndTranslate(t, depth)
-            if depth > 5 or type(t) ~= "table" then return "" end
-            local str = ""
-            
-            pcall(function()
-                local idVal = t.Id or t.id or t.ItemId
-                if idVal and FishDB[idVal] then
-                    str = str .. " " .. FishDB[idVal]
-                end
-            end)
-
-            for _, v in pairs(t) do
-                if type(v) == "string" then
-                    str = str .. " " .. string.lower(v)
-                elseif type(v) == "table" then
-                    str = str .. safeExtractAndTranslate(v, depth + 1)
-                end
-            end
-            return str
         end
 
         local function getUUID(args)
@@ -150,7 +129,7 @@ task.spawn(function()
             return uuid
         end
 
-        -- 🗄️ DATABASE BARCODE (Mencegah Hitung Ganda)
+        -- 🗄️ DATABASE BARCODE
         local processedUUIDs = {}
         
         -- ⚡ PRECISE FAST REEL
@@ -175,7 +154,7 @@ task.spawn(function()
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- 📦 RESEPSIONIS TAS (STRICT UUID)
+                -- 📦 RESEPSIONIS TAS (STRICT ID-CARD)
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     
@@ -187,21 +166,48 @@ task.spawn(function()
                     end
                     if isOtherPlayer then return end
                     
-                    -- 🛡️ FILTER 1: MENCARI BARCODE (UUID)
+                    -- FUNGSI BARU: Mengecek KTP Barang & Menerjemahkan Sekaligus
+                    local hasItemID = false
+                    local function safeExtractAndTranslate(t, depth)
+                        if depth > 5 or type(t) ~= "table" then return "" end
+                        local str = ""
+                        pcall(function()
+                            local idVal = t.Id or t.id or t.ItemId or t.itemId
+                            if idVal then
+                                hasItemID = true -- MENANDAKAN INI ADALAH BARANG FISIK ASLI!
+                                if FishDB[idVal] then
+                                    str = str .. " " .. FishDB[idVal]
+                                end
+                            end
+                        end)
+                        for _, v in pairs(t) do
+                            if type(v) == "string" then
+                                str = str .. " " .. string.lower(v)
+                            elseif type(v) == "table" then
+                                str = str .. safeExtractAndTranslate(v, depth + 1)
+                            end
+                        end
+                        return str
+                    end
+
+                    local dataStr = safeExtractAndTranslate(args, 1)
+                    
+                    -- 🛡️ FILTER 1: HARUS PUNYA KTP BARANG ('Id')
+                    -- Jika tidak punya KTP (cuma efek visual), buang!
+                    if not hasItemID then return end
+                    
+                    -- 🛡️ FILTER 2: MENCARI BARCODE (UUID)
                     local uuid = getUUID(args)
-                    -- Jika data ini tidak punya Barcode fisik, berarti ini cuma animasi visual. BUANG!
                     if not uuid then return end
                     
-                    -- 🛡️ FILTER 2: MENCEGAH BARCODE GANDA
+                    -- 🛡️ FILTER 3: MENCEGAH BARCODE GANDA
                     if processedUUIDs[uuid] then return end
-                    processedUUIDs[uuid] = true -- Catat barcode ini agar tidak dihitung lagi
+                    processedUUIDs[uuid] = true 
 
-                    -- Terjemahkan ID
-                    local dataStr = safeExtractAndTranslate(args, 1)
                     if string.len(dataStr) > 400 then return end
                     dataStr = string.lower(string.gsub(dataStr, "_", " "))
                     
-                    -- 🎉 INI DIA! Penghitung akan 100% akurat karena sudah melewati 2 filter di atas!
+                    -- 🎉 PENGHITUNG GLOBAL (Dijamin tidak akan dobel karena 3 filter di atas!)
                     totalSemuaIkan = totalSemuaIkan + 1
 
                     -- CEK SULTAN
@@ -299,5 +305,5 @@ task.spawn(function()
             end
         end)
     end)
-    if not success then label.Text = "ETZO V8.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V8.3 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
