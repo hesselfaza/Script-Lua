@@ -290,34 +290,39 @@ task.spawn(function()
             local VirtualUser = game:GetService("VirtualUser")
             while isFarming do
                 task.wait(1)
-                -- Waktu masih 15 detik agar cepat dites.
+                -- Waktu masih 15 detik agar cepat dites
                 if AUTO_TOTEM and (os.time() - lastTotemPlace >= 15) then
                     local char = LocalPlayer.Character
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
                     if char and hum then
-                        local currentRod = char:FindFirstChildOfClass("Tool")
-                        local totemTool = nil
-                        
-                        -- ☢️ OMNI-SEARCH: Geledah SELURUH anatomi akun pemain tanpa ampun!
-                        for _, v in ipairs(LocalPlayer:GetDescendants()) do
-                            if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then
-                                totemTool = v
-                                break
+                        -- TAHAP 1: Meretas Custom Inventory
+                        -- Tembak semua jalur komunikasi Equip untuk memaksa server mengeluarkan totem
+                        for _, r in ipairs(net:GetChildren()) do
+                            if string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr") then
+                                -- Kita minta server untuk meng-equip "Luck Totem" (Sesuai nama di tas Anda)
+                                task.spawn(function() pcall(function() r:FireServer("Luck Totem") end) end)
+                                task.spawn(function() pcall(function() r:InvokeServer("Luck Totem") end) end)
                             end
                         end
-
+                        
+                        -- Beri waktu 1.5 detik agar server memproses dan memunculkan 3D Totem-nya di tangan
+                        task.wait(1.5) 
+                        
+                        -- TAHAP 2: Tangkap wujud fisik yang baru saja dipanggil
+                        local totemTool = nil
+                        for _, v in ipairs(char:GetChildren()) do
+                            if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then 
+                                totemTool = v 
+                                break 
+                            end
+                        end
+                        
                         if totemTool then
-                            namaSultanTerakhir = "MENANCAPKAN " .. string.upper(totemTool.Name) .. "..."
+                            namaSultanTerakhir = "MENANCAPKAN TOTEM..."
                             updateDashboard()
                             
-                            -- 🛸 TELEPORTASI PAKSA KE TANGAN
-                            hum:EquipTool(totemTool)
-                            totemTool.Parent = char -- Jalur belakang jika EquipTool diblokir server
-                            
-                            task.wait(1.5) 
-                            
-                            -- Spam klik brutal (Kombinasi 3 metode penembus emulator)
+                            -- TAHAP 3: Spam klik brutal untuk menancapkan
                             for i = 1, 5 do
                                 pcall(function() totemTool:Activate() end)
                                 pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(0, 0)) end)
@@ -325,17 +330,13 @@ task.spawn(function()
                                 task.wait(0.5)
                             end
                             
-                            task.wait(3) -- Tunggu animasi selesai
+                            task.wait(3) -- Tunggu animasi menancap selesai
                             
-                            -- Kembalikan pancingan dengan aman
-                            if currentRod then
-                                hum:EquipTool(currentRod)
-                                currentRod.Parent = char
-                            else
-                                for _, r in ipairs(net:GetChildren()) do
-                                    if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
-                                        pcall(function() r:FireServer(1) end)
-                                    end
+                            -- TAHAP 4: Kembalikan Pancingan ke tangan (Slot 1)
+                            for _, r in ipairs(net:GetChildren()) do
+                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}Fwmr")) then
+                                    pcall(function() r:FireServer(1) end) -- Angka 1 biasanya mewakili slot Rod
+                                    pcall(function() r:FireServer("1") end)
                                 end
                             end
                             
@@ -343,7 +344,7 @@ task.spawn(function()
                             namaSultanTerakhir = "TOTEM SUKSES!"
                             updateDashboard()
                         else
-                            namaSultanTerakhir = "GAGAL: TOTEM SEMBUNYI!"
+                            namaSultanTerakhir = "GAGAL: BYPASS TAS DITOLAK"
                             updateDashboard()
                             lastTotemPlace = os.time() 
                         end
