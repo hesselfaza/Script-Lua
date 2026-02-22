@@ -1,0 +1,34 @@
+-- ==========================================
+-- ETZO - NETWORK DUMPER & DECRYPTOR
+-- ==========================================
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+print("==========================================")
+print("🔍 MEMULAI PEMINDAIAN ENKRIPSI TALON...")
+
+local success, err = pcall(function()
+    local Packages = ReplicatedStorage:WaitForChild("Packages", 5)
+    local _Index = Packages:WaitForChild("_Index", 5)
+    local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 5)
+    local net = sleitnick:WaitForChild("net", 5)
+
+    print("✅ Folder Jaringan Ditemukan! Mengambil data...")
+    print("------------------------------------------")
+    
+    local count = 0
+    for _, v in ipairs(net:GetChildren()) do
+        print("Tipe: " .. v.ClassName .. " | Nama Enkripsi: " .. v.Name)
+        count = count + 1
+    end
+    
+    print("------------------------------------------")
+    print("🎯 Total Remote Ditemukan: " .. count)
+    print("Silakan salin hasil di atas dan berikan ke Gemini!")
+end)
+
+if not success then
+    warn("❌ GAGAL MENEMBUS FOLDER JARINGAN!")
+    warn("Pesan Error: " .. tostring(err))
+    warn("Talon mungkin telah mengenkripsi nama foldernya juga.")
+end
+print("==========================================")
