@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V6.2 (DYNAMIC X-RAY & TRUE OWNERSHIP)
+-- ETZO - HEADLESS AUTO FISH V6.3 (VALUE-ONLY SCANNER & UUID EXTRACTOR)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -13,7 +13,7 @@ local TARGET_FISH = {
     ["sophisticated angler"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
-    ["ruby"] = true, -- Wajib ada untuk memicu pengaman Gemstone Ruby
+    ["ruby"] = true, 
     
     -- TES IKAN MURAH:
     ["bass"] = true,
@@ -44,7 +44,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V6.2 DYNAMIC X-RAY..."
+label.Text = "ETZO - MEMUAT V6.3 VALUE SCANNER..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -72,7 +72,7 @@ task.spawn(function()
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V6.2 AKTIF!**\nSistem X-Ray Dinamis siap untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V6.3 AKTIF!**\nSistem Pemindai Nilai (Anti-Luraph) siap." })
             })
         end)
 
@@ -92,31 +92,38 @@ task.spawn(function()
         end
 
         -- ==========================================
-        -- ☢️ DYNAMIC STRUCTURAL X-RAY
+        -- ☢️ VALUE-ONLY SCANNER (ANTI KEY-ENCRYPTION)
         -- ==========================================
         local function scanForItemData(args)
             local foundId = nil
             local uniqueId = nil
+            local isItemStructure = false
             
             local function searchTable(t, depth)
-                if depth > 4 or type(t) ~= "table" then return end
+                if depth > 5 or type(t) ~= "table" then return end
                 
-                local idValue = t.Id or t.id or t.ItemId or t.itemId
-                if idValue and type(idValue) == "string" then
-                    local cStr = string.lower(string.gsub(idValue, "_", " "))
-                    
-                    -- DINAMIS: Mengecek ke daftar TARGET_FISH yang Anda buat
-                    for targetName, _ in pairs(TARGET_FISH) do
-                        if string.find(cStr, targetName) then
-                            foundId = idValue
-                            uniqueId = t.UUID or t.InstanceId or t.Id
-                            return
-                        end
-                    end
+                -- Memastikan ini adalah tabel item (memiliki nilai angka seperti berat/tier)
+                for _, v in pairs(t) do
+                    if type(v) == "number" then isItemStructure = true end
                 end
                 
                 for _, v in pairs(t) do
-                    if type(v) == "table" and not foundId then
+                    if type(v) == "string" then
+                        -- 1. Mencari kode unik (UUID) untuk fitur Favorite
+                        if string.match(v, "%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x") then
+                            uniqueId = v
+                        end
+                        
+                        -- 2. Mencari nama ikan (Membatasi panjang string agar tidak membaca chat/pesan sistem)
+                        if string.len(v) < 35 then
+                            local cStr = string.lower(string.gsub(v, "_", " "))
+                            for targetName, _ in pairs(TARGET_FISH) do
+                                if string.find(cStr, targetName) then
+                                    foundId = v
+                                end
+                            end
+                        end
+                    elseif type(v) == "table" and not foundId then
                         searchTable(v, depth + 1)
                     end
                 end
@@ -127,7 +134,11 @@ task.spawn(function()
                 if foundId then break end
             end
             
-            return foundId, uniqueId
+            -- Hanya kembalikan nilai jika bentuknya benar-benar struktur data item, bukan teks chat
+            if foundId and isItemStructure then
+                return foundId, uniqueId
+            end
+            return nil, nil
         end
 
         local processedFish = {}
@@ -167,7 +178,7 @@ task.spawn(function()
                         processedFish[rawFishData] = os.time()
                         
                         totalCaught = totalCaught + 1
-                        label.Text = string.format("ETZO - BOT V6.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
+                        label.Text = string.format("ETZO - BOT V6.3 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
 
                         local cleanName = string.lower(string.gsub(rawFishData, "_", " "))
                         local isTarget = false
@@ -185,7 +196,6 @@ task.spawn(function()
                         end
                         
                         for targetName, _ in pairs(TARGET_FISH) do
-                            -- Khusus ruby, abaikan jika tidak ada gemstone (agar tidak terkirim ke webhook)
                             if targetName == "ruby" then
                                 if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
                                     isTarget = true; break
@@ -256,7 +266,7 @@ task.spawn(function()
             end
         end)
         
-        label.Text = "ETZO - BOT V6.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: 0\n🎣 Terakhir: Menunggu tangkapan..."
+        label.Text = "ETZO - BOT V6.3 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Tercatat: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-    if not success then label.Text = "ETZO V6.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V6.3 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
