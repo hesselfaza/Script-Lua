@@ -1,10 +1,5 @@
--- ==========================================
--- ETZO - NETWORK DUMPER & DECRYPTOR
--- ==========================================
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-print("==========================================")
-print("🔍 MEMULAI PEMINDAIAN ENKRIPSI TALON...")
+local hasilDump = "=== HASIL DUMP JARINGAN ETZO ===\n"
 
 local success, err = pcall(function()
     local Packages = ReplicatedStorage:WaitForChild("Packages", 5)
@@ -12,23 +7,22 @@ local success, err = pcall(function()
     local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 5)
     local net = sleitnick:WaitForChild("net", 5)
 
-    print("✅ Folder Jaringan Ditemukan! Mengambil data...")
-    print("------------------------------------------")
-    
     local count = 0
     for _, v in ipairs(net:GetChildren()) do
-        print("Tipe: " .. v.ClassName .. " | Nama Enkripsi: " .. v.Name)
+        hasilDump = hasilDump .. "Tipe: " .. v.ClassName .. " | Nama: " .. v.Name .. "\n"
         count = count + 1
     end
-    
-    print("------------------------------------------")
-    print("🎯 Total Remote Ditemukan: " .. count)
-    print("Silakan salin hasil di atas dan berikan ke Gemini!")
+    hasilDump = hasilDump .. "\nTotal Remote: " .. count
 end)
 
-if not success then
-    warn("❌ GAGAL MENEMBUS FOLDER JARINGAN!")
-    warn("Pesan Error: " .. tostring(err))
-    warn("Talon mungkin telah mengenkripsi nama foldernya juga.")
+if success then
+    -- Perintah rahasia untuk menyalin teks otomatis di Delta
+    if setclipboard then
+        setclipboard(hasilDump)
+        print("✅ SUKSES! Teks sudah otomatis disalin (Copy). Silakan Paste!")
+    else
+        print("❌ Delta Lite versi ini tidak mendukung setclipboard.")
+    end
+else
+    print("Gagal: " .. tostring(err))
 end
-print("==========================================")
