@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V8.0 (INDEPENDENT UNIVERSAL COUNTER)
+-- ETZO - HEADLESS AUTO FISH V8.1 (ID TRANSLATOR & UNIVERSAL COUNTER)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,13 +7,13 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN SULTAN (Silakan ganti/tambah untuk testing)
+-- 🎯 TARGET IKAN SULTAN
 local TARGET_FISH = {
     ["golden megalodon"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
     ["ruby"] = true, 
-    ["sophisticated angler"] = true, -- TES VIP: Biarkan ini jika mau tes Sultan Counter
+    ["sophisticated angler"] = true, -- TES VIP
 }
 
 local Players = game:GetService("Players")
@@ -38,7 +38,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT V8.0 UNIVERSAL COUNTER..."
+label.Text = "ETZO - MEMUAT V8.1 ID TRANSLATOR..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -60,19 +60,39 @@ task.spawn(function()
         local sleitnick = _Index:WaitForChild("sleitnick_net@0.2.0", 30)
         local net = sleitnick:WaitForChild("net", 30)
 
+        -- 📚 MEMBANGUN KAMUS TERJEMAHAN ID (BYPASS LURAPH)
+        local FishDB = {}
+        task.spawn(function()
+            pcall(function()
+                for _, module in ipairs(ReplicatedStorage.Items:GetChildren()) do
+                    if module:IsA("ModuleScript") then
+                        pcall(function()
+                            local mod = require(module)
+                            local data = type(mod) == "table" and (mod.Data or mod) or nil
+                            if data and data.Id then
+                                local name = data.Name or string.gsub(module.Name, "_", " ")
+                                FishDB[data.Id] = string.lower(name)
+                                FishDB[tostring(data.Id)] = string.lower(name)
+                            end
+                        end)
+                    end
+                end
+            end)
+        end)
+
         local totalSemuaIkan = 0
         local totalIkanSultan = 0
         local namaSultanTerakhir = "Belum ada"
 
         local function updateDashboard()
-            label.Text = string.format("ETZO - BOT V8.0 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
+            label.Text = string.format("ETZO - BOT V8.1 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n📦 Semua Ikan Ditarik: %d\n🌟 Ikan Sultan: %d\n🎣 Terakhir (Sultan): %s", totalSemuaIkan, totalIkanSultan, string.upper(namaSultanTerakhir))
         end
 
         local HttpRequest = (syn and syn.request) or http_request or request or (fluxus and fluxus.request)
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.0 AKTIF!**\nSistem Penghitung Independen berjalan untuk `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V8.1 AKTIF!**\nSistem ID Translator memantau `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -91,14 +111,24 @@ task.spawn(function()
             pcall(function() HttpRequest({ Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" }, Body = HttpService:JSONEncode(payload) }) end)
         end
 
-        local function safeExtractStrings(t, depth)
+        -- ☢️ EKSTRAKTOR TEKS + PENERJEMAH ID ANGKA
+        local function safeExtractAndTranslate(t, depth)
             if depth > 5 or type(t) ~= "table" then return "" end
             local str = ""
+            
+            -- Jika server mengirimkan ID berupa angka, paksa terjemahkan ke nama ikan!
+            pcall(function()
+                local idVal = t.Id or t.id or t.ItemId
+                if idVal and FishDB[idVal] then
+                    str = str .. " " .. FishDB[idVal]
+                end
+            end)
+
             for _, v in pairs(t) do
                 if type(v) == "string" then
                     str = str .. " " .. string.lower(v)
                 elseif type(v) == "table" then
-                    str = str .. safeExtractStrings(v, depth + 1)
+                    str = str .. safeExtractAndTranslate(v, depth + 1)
                 end
             end
             return str
@@ -125,9 +155,7 @@ task.spawn(function()
         local lastFishTime = 0
         local officialFishRemote = nil
         
-        -- ==========================================
-        -- ⚡ PRECISE FAST REEL (Hanya Assist, Tanpa Counter)
-        -- ==========================================
+        -- ⚡ PRECISE FAST REEL
         local isReeling = false
         local function triggerFastReel()
             if isReeling then return end
@@ -136,11 +164,8 @@ task.spawn(function()
                 task.wait(0.3)
                 local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
                 local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
-                
                 pcall(function() if catchEnc then catchEnc:InvokeServer() end end)
                 pcall(function() if catchPlain then catchPlain:InvokeServer() end end)
-                
-                -- DIHAPUS: Penghitung "Semua Ikan" tidak lagi di sini agar tidak error saat pakai Auto-Bawaan
                 task.wait(1.5)
                 isReeling = false
             end)
@@ -152,13 +177,10 @@ task.spawn(function()
                     remote.OnClientEvent:Connect(triggerFastReel)
                 end
                 
-                -- ==========================================
                 -- 📦 RESEPSIONIS TAS (UNIVERSAL COUNTER)
-                -- ==========================================
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     
-                    -- 1. Blokir Teks Broadcast (Milik Player Lain)
                     local isOtherPlayer = false
                     for _, arg in pairs(args) do
                         if typeof(arg) == "Instance" and arg:IsA("Player") and arg ~= LocalPlayer then
@@ -167,34 +189,29 @@ task.spawn(function()
                     end
                     if isOtherPlayer then return end
                     
-                    local dataStr = safeExtractStrings(args, 1)
-                    -- 2. Blokir Sinkronisasi Tas Penuh
+                    -- Paksa terjemahkan ID angka menjadi nama!
+                    local dataStr = safeExtractAndTranslate(args, 1)
+                    
+                    -- Blokir Sinkronisasi Tas Penuh
                     if string.len(dataStr) > 400 then return end
                     dataStr = string.lower(string.gsub(dataStr, "_", " "))
                     
-                    -- 3. Identifikasi Jalur Resmi Ikan
                     local isThisTheFishRemote = false
                     local rName = remote.Name
                     
-                    -- Jika namanya cocok dengan data dump kita ATAU jika paketnya memuat kode UUID unik game
                     if string.find(string.lower(rName), "obtainednewfish") or string.find(rName, "7vek") or getUUID(args) then
                         isThisTheFishRemote = true
                     end
-                    
-                    if isThisTheFishRemote then
-                        officialFishRemote = remote
-                    end
+                    if isThisTheFishRemote then officialFishRemote = remote end
 
-                    -- 4. LOGIKA PENGHITUNG (Jika ini adalah jalur resmi ikan)
                     if remote == officialFishRemote or isThisTheFishRemote then
-                        -- Cegah Spam (Debounce 1.5 detik)
                         if (os.time() - lastFishTime) < 1.5 then return end
                         lastFishTime = os.time()
 
-                        -- 🎉 INI DIA! SEMUA IKAN MASUK DIHITUNG DI SINI:
+                        -- PENGHITUNG GLOBAL BERTAMBAH
                         totalSemuaIkan = totalSemuaIkan + 1
 
-                        -- 🌟 CEK APAKAH IKANNYA SULTAN (Sesuai List)
+                        -- CEK SULTAN (Sekarang dataStr sudah berisi nama ikan hasil terjemahan!)
                         local caughtSultan = nil
                         for targetName, _ in pairs(TARGET_FISH) do
                             if string.find(dataStr, targetName) then
@@ -214,7 +231,6 @@ task.spawn(function()
                                     namaSultanTerakhir = caughtSultan
                                 end
                                 
-                                -- 🛡️ Amankan Gemstone Ruby
                                 if caughtSultan == "ruby" and string.find(dataStr, "gemstone") then
                                     local uuid = getUUID(args)
                                     if uuid then
@@ -294,5 +310,5 @@ task.spawn(function()
             end
         end)
     end)
-    if not success then label.Text = "ETZO V8.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V8.1 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
