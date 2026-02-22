@@ -1,5 +1,5 @@
 -- ====================================================================
--- ETZO - HEADLESS AUTO FISH V4.2 (X-RAY LISTENER & FAST REEL)
+-- ETZO - HEADLESS AUTO FISH V5.0 (SMART FAST REEL + X-RAY LISTENER)
 -- ====================================================================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462156419385004242/mvEgInDazIKpbd7nGaDt8nqqY_QaAe6eRhwiGEZScxDY499Urn4yKCtJstD35TSrdNur"
 local AUTO_SELL = true
@@ -7,17 +7,12 @@ local SELL_INTERVAL = 30
 local AUTO_TOTEM = true
 local TOTEM_INTERVAL = 180
 
--- 🎯 TARGET IKAN (DITAMBAH IKAN MURAH UNTUK TES X-RAY)
+-- 🎯 TARGET IKAN (SUDAH DIBERSIHKAN DARI IKAN MURAH)
 local TARGET_FISH = {
     ["golden megalodon"] = true,
-    ["red goatfish"] = true,
+    ["sophisticated angler"] = true,
     ["abyssal kraken"] = true,
     ["void leviathan"] = true,
-    
-    -- TES DIAGNOSTIK: Hapus 3 baris ini nanti jika Discord sudah spam!
-    ["bass"] = true,
-    ["trout"] = true,
-    ["salmon"] = true,
 }
 
 local Players = game:GetService("Players")
@@ -41,7 +36,7 @@ frame.Parent = blackScreen
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 1, 0)
 label.BackgroundTransparency = 1
-label.Text = "ETZO - MEMUAT MESIN X-RAY..."
+label.Text = "ETZO - MEMUAT SMART FAST REEL..."
 label.TextColor3 = Color3.new(1, 1, 0)
 label.Font = Enum.Font.Code
 label.TextSize = 24
@@ -70,7 +65,7 @@ task.spawn(function()
         pcall(function()
             HttpRequest({
                 Url = WEBHOOK_URL, Method = "POST", Headers = { ["Content-Type"] = "application/json" },
-                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V4.2 AKTIF!**\nMesin X-Ray memantau akun `" .. LocalPlayer.Name .. "`." })
+                Body = HttpService:JSONEncode({ username = "Etzo System", content = "🟢 **ETZO V5.0 AKTIF!**\nSistem Smart Fast Reel & X-Ray Webhook memantau akun `" .. LocalPlayer.Name .. "`." })
             })
         end)
 
@@ -79,10 +74,10 @@ task.spawn(function()
             local payload = {
                 username = "Etzo Bot",
                 embeds = {{
-                    title = "🎣 Target / Tes Ikan Terdeteksi!", color = 0x2196f3,
+                    title = "🎣 Target Ikan Berhasil Ditangkap!", color = 0xf44336,
                     fields = {
                         { name = "Akun", value = LocalPlayer.Name, inline = true },
-                        { name = "Data Mentah", value = fishName, inline = true },
+                        { name = "Ikan", value = fishName, inline = true },
                     }, timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
                 }}
             }
@@ -90,7 +85,7 @@ task.spawn(function()
         end
 
         -- ==========================================
-        -- ☢️ X-RAY DEEP SCANNER (MENEMBUS LURAPH)
+        -- ☢️ X-RAY DEEP SCANNER
         -- ==========================================
         local function xRayScan(data, checked)
             checked = checked or {}
@@ -101,8 +96,7 @@ task.spawn(function()
             for k, v in pairs(data) do
                 if type(v) == "string" then
                     local cleanStr = string.lower(string.gsub(v, "_", " "))
-                    -- Deteksi paksa kata kunci ikan di dalam data acak
-                    if string.find(cleanStr, "fish") or string.find(cleanStr, "megalodon") or string.find(cleanStr, "kraken") or string.find(cleanStr, "leviathan") or string.find(cleanStr, "angler") or string.find(cleanStr, "ruby") or string.find(cleanStr, "bass") or string.find(cleanStr, "trout") or string.find(cleanStr, "salmon") then
+                    if string.find(cleanStr, "megalodon") or string.find(cleanStr, "kraken") or string.find(cleanStr, "leviathan") or string.find(cleanStr, "angler") or string.find(cleanStr, "ruby") then
                         return v
                     end
                 elseif type(v) == "table" then
@@ -114,8 +108,32 @@ task.spawn(function()
         end
 
         local processedFish = {}
+        
+        -- ==========================================
+        -- ⚡ SMART FAST REEL (ANTI-STUCK)
+        -- ==========================================
+        local function triggerFastReel()
+            task.spawn(function()
+                local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
+                local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
+                for i = 1, 15 do
+                    task.spawn(function() pcall(function() if catchEnc then catchEnc:InvokeServer() end end) end)
+                    task.spawn(function() pcall(function() if catchPlain then catchPlain:InvokeServer() end end) end)
+                    task.wait(0.1)
+                end
+            end)
+        end
+
         for _, remote in ipairs(net:GetChildren()) do
             if remote:IsA("RemoteEvent") then
+                -- 1. DENGARKAN SERVER UNTUK MEMICU FAST REEL PADA SAAT YANG TEPAT SAJA
+                if string.find(string.lower(remote.Name), "minigame") or string.find(remote.Name, "~>ulk") then
+                    remote.OnClientEvent:Connect(function()
+                        triggerFastReel()
+                    end)
+                end
+                
+                -- 2. DENGARKAN HASIL TANGKAPAN (X-RAY WEBHOOK)
                 remote.OnClientEvent:Connect(function(...)
                     local args = {...}
                     local rawFishData = nil
@@ -125,7 +143,7 @@ task.spawn(function()
                             rawFishData = xRayScan(arg)
                         elseif type(arg) == "string" then
                             local cStr = string.lower(string.gsub(arg, "_", " "))
-                            if string.find(cStr, "fish") or string.find(cStr, "megalodon") or string.find(cStr, "kraken") or string.find(cStr, "ruby") or string.find(cStr, "bass") then
+                            if string.find(cStr, "megalodon") or string.find(cStr, "kraken") or string.find(cStr, "ruby") or string.find(cStr, "leviathan") or string.find(cStr, "angler") then
                                 rawFishData = arg
                             end
                         end
@@ -133,20 +151,23 @@ task.spawn(function()
                     end
                     
                     if rawFishData then
-                        -- Mencegah spam ganda dari event yang dienkripsi
                         if processedFish[rawFishData] and (os.time() - processedFish[rawFishData] < 2) then return end
                         processedFish[rawFishData] = os.time()
                         
                         totalCaught = totalCaught + 1
-                        label.Text = string.format("ETZO - BOT V4.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Total Ikan: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
+                        label.Text = string.format("ETZO - BOT V5.0 AKTIF\n[ Mode: Auto-Bawaan + Smart Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: %d\n🎣 Terakhir: %s", totalCaught, tostring(rawFishData))
 
                         local cleanName = string.lower(string.gsub(rawFishData, "_", " "))
                         local isTarget = false
                         
-                        -- Bypass Favorite khusus Gemstone Ruby sementara
                         if string.find(cleanName, "ruby") and string.find(cleanName, "gemstone") then
                             isTarget = true
-                            print("[ETZO] Gemstone Ruby Terdeteksi oleh X-Ray!")
+                            for _, r in ipairs(net:GetChildren()) do
+                                if string.find(string.lower(r.Name), "favorite") or string.find(r.Name, "~6xs") then
+                                    task.spawn(function() pcall(function() if r:IsA("RemoteFunction") then r:InvokeServer(rawFishData, true) elseif r:IsA("RemoteEvent") then r:FireServer(rawFishData, true) end end) end)
+                                end
+                            end
+                            print("[ETZO] MENGAMANKAN MUTASI! Gemstone Ruby telah difavoritkan.")
                         end
                         
                         for targetName, _ in pairs(TARGET_FISH) do
@@ -159,17 +180,7 @@ task.spawn(function()
             end
         end
 
-        -- ⚡ FAST REEL (MINIGAME KILLER)
         local isFarming = true
-        task.spawn(function()
-            while isFarming do
-                task.wait(0.2)
-                local catchEnc = net:FindFirstChild("RF/{6vgj|?J6xFGG::Mjk")
-                local catchPlain = net:FindFirstChild("RF/CatchFishCompleted")
-                if catchEnc then task.spawn(function() pcall(function() catchEnc:InvokeServer() end) end) end
-                if catchPlain then task.spawn(function() pcall(function() catchPlain:InvokeServer() end) end) end
-            end
-        end)
 
         -- 💰 AUTO SELL
         if AUTO_SELL then
@@ -224,7 +235,7 @@ task.spawn(function()
             end
         end)
         
-        label.Text = "ETZO - BOT V4.2 AKTIF\n[ Mode: Auto-Bawaan + Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Total Ikan: 0\n🎣 Terakhir: Menunggu tangkapan..."
+        label.Text = "ETZO - BOT V5.0 AKTIF\n[ Mode: Auto-Bawaan + Smart Fast Reel ]\n[ X-Ray Scanner: ON ]\n\n🐟 Ikan Langka: 0\n🎣 Terakhir: Menunggu tangkapan..."
     end)
-    if not success then label.Text = "ETZO V4.2 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
+    if not success then label.Text = "ETZO V5.0 - ERROR!\n" .. tostring(errorMessage); label.TextColor3 = Color3.new(1, 0, 0) end
 end)
