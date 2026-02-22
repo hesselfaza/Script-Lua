@@ -296,49 +296,35 @@ task.spawn(function()
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
                     if char and hum then
-                        -- 🕵️ TAHAP 1: PEMBAJAKAN UI (Mencuri UUID dari Layar)
                         local targetUUID = nil
                         
-                        -- Geledah seluruh Layar UI Pemain
-                        for _, guiObj in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
-                            if (guiObj:IsA("TextLabel") or guiObj:IsA("TextButton")) and string.find(string.lower(guiObj.Text), "totem") then
-                                -- Kita temukan UI Totem-nya! Sekarang bongkar atributnya sampai 5 level ke atas!
-                                local current = guiObj
-                                for i = 1, 5 do 
-                                    if not current then break end
-                                    
-                                    -- Cek Atribut Tersembunyi
-                                    for attrName, attrValue in pairs(current:GetAttributes()) do
-                                        if type(attrValue) == "string" and string.match(attrValue, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
-                                            targetUUID = attrValue
+                        -- 🧠 TAHAP 1: PEMBAJAKAN MEMORI RAM (Membongkar brankas data LocalScript)
+                        namaSultanTerakhir = "MENYEKAN MEMORI RAM..."
+                        updateDashboard()
+                        
+                        pcall(function()
+                            -- getgc(true) akan menyedot seluruh data mentah yang ada di memori Delta
+                            for _, obj in pairs(getgc(true)) do
+                                if type(obj) == "table" then
+                                    local itemName = rawget(obj, "Name") or rawget(obj, "name") or rawget(obj, "ItemName")
+                                    if type(itemName) == "string" and string.find(string.lower(itemName), "totem") then
+                                        -- Ketemu tabel datanya! Sekarang cari kolom Barcode-nya
+                                        local uid = rawget(obj, "UUID") or rawget(obj, "uuid") or rawget(obj, "Id") or rawget(obj, "id") or rawget(obj, "InstanceID")
+                                        if type(uid) == "string" and string.match(uid, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                                            targetUUID = uid
                                             break
                                         end
                                     end
-                                    if targetUUID then break end
-                                    
-                                    -- Cek Nilai Anak (Value Object)
-                                    for _, child in ipairs(current:GetChildren()) do
-                                        if child:IsA("StringValue") and string.match(child.Value, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
-                                            targetUUID = child.Value
-                                            break
-                                        elseif string.match(child.Name, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
-                                            targetUUID = child.Name
-                                            break
-                                        end
-                                    end
-                                    if targetUUID then break end
-                                    current = current.Parent -- Naik 1 level
                                 end
                             end
-                            if targetUUID then break end -- Berhenti mencari jika sudah dapat 1 Barcode
-                        end
+                        end)
 
                         -- 🚀 TAHAP 2: PENYERBUAN SERVER
                         if targetUUID then
-                            namaSultanTerakhir = "MERETAS BARCODE TOTEM..."
+                            namaSultanTerakhir = "MERETAS BARCODE RAM..."
                             updateDashboard()
                             
-                            -- Tembakkan UUID hasil curian ke semua lubang Equip server!
+                            -- Tembakkan Barcode RAM hasil curian ke server!
                             for _, r in ipairs(net:GetChildren()) do
                                 local rName = string.lower(r.Name)
                                 if not string.find(rName, "sell") and not string.find(rName, "drop") and not string.find(rName, "delete") then
@@ -351,12 +337,11 @@ task.spawn(function()
                                 end
                             end
                             
-                            task.wait(2) -- Beri waktu 2 detik agar server mengirimkan wujud fisiknya ke tangan karakter
+                            task.wait(2) -- Jeda 2 detik agar item fisiknya mendarat di karakter
                             
                             -- 🔨 TAHAP 3: TANGKAP DAN TANCAPKAN
                             local totemTool = char:FindFirstChildOfClass("Tool")
                             if not (totemTool and string.find(string.lower(totemTool.Name), "totem")) then
-                                -- Cari di ransel cadangan jika server meleset
                                 totemTool = LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
                             end
                             
@@ -374,7 +359,7 @@ task.spawn(function()
                                     task.wait(0.5)
                                 end
                                 
-                                task.wait(3) -- Jeda animasi totem
+                                task.wait(3) -- Jeda animasi menancap
                                 
                                 -- Kembalikan ke pancingan slot 1
                                 for _, r in ipairs(net:GetChildren()) do
@@ -393,7 +378,7 @@ task.spawn(function()
                                 lastTotemPlace = os.time()
                             end
                         else
-                            namaSultanTerakhir = "GAGAL: BARCODE UI TIDAK KETEMU"
+                            namaSultanTerakhir = "GAGAL: BARCODE RAM NIHIL"
                             updateDashboard()
                             lastTotemPlace = os.time()
                         end
