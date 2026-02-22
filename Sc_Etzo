@@ -10,7 +10,7 @@ local TOTEM_INTERVAL = 180
 -- 🧪 PENGATURAN TES AUTO-FAVORITE (Tulis huruf kecil semua)
 -- Ganti dengan ikan murah dan mutasi yang sering Anda dapatkan untuk tes.
 local TEST_FAV_FISH = "sophisticated angler"       -- Contoh: "bass", "salmon", "mackerel"
-local TEST_FAV_MUTATION = "shiny", "gold"  -- Contoh: "shiny", "sparkling", "giant"
+local TEST_FAV_MUTATION = "shiny", "gold", "albino"  -- Contoh: "shiny", "sparkling", "giant"
 
 -- 🎯 TARGET IKAN SULTAN
 local TARGET_FISH = {
