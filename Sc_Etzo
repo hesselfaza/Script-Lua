@@ -285,7 +285,6 @@ task.spawn(function()
         end
 
         -- 🗿 AUTO TOTEM
--- 🗿 AUTO TOTEM (V9.6 MULTI-PAYLOAD & ID CRACKER)
         local lastTotemPlace = 0
         task.spawn(function()
             local VirtualUser = game:GetService("VirtualUser")
@@ -297,84 +296,106 @@ task.spawn(function()
                     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
                     if char and hum then
-                        -- 1. Cari dulu di tas fisik (Siapa tahu sudah muncul)
-                        local totemTool = char:FindFirstChild("Luck Totem") or LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
-                        if not totemTool then
-                            for _, v in ipairs(char:GetChildren()) do if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then totemTool = v; break end end
-                        end
+                        -- 🕵️ TAHAP 1: PEMBAJAKAN UI (Mencuri UUID dari Layar)
+                        local targetUUID = nil
                         
-                        -- 2. Jika tidak ada fisik, kita RETAS SERVER pakai Multi-Payload
-                        if not totemTool then
-                            -- Cari ID Totem di Database internal game
-                            local totemID = nil
-                            for id, name in pairs(FishDB) do
-                                if string.find(name, "luck totem") then totemID = id; break end
+                        -- Geledah seluruh Layar UI Pemain
+                        for _, guiObj in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                            if (guiObj:IsA("TextLabel") or guiObj:IsA("TextButton")) and string.find(string.lower(guiObj.Text), "totem") then
+                                -- Kita temukan UI Totem-nya! Sekarang bongkar atributnya sampai 5 level ke atas!
+                                local current = guiObj
+                                for i = 1, 5 do 
+                                    if not current then break end
+                                    
+                                    -- Cek Atribut Tersembunyi
+                                    for attrName, attrValue in pairs(current:GetAttributes()) do
+                                        if type(attrValue) == "string" and string.match(attrValue, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                                            targetUUID = attrValue
+                                            break
+                                        end
+                                    end
+                                    if targetUUID then break end
+                                    
+                                    -- Cek Nilai Anak (Value Object)
+                                    for _, child in ipairs(current:GetChildren()) do
+                                        if child:IsA("StringValue") and string.match(child.Value, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                                            targetUUID = child.Value
+                                            break
+                                        elseif string.match(child.Name, "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$") then
+                                            targetUUID = child.Name
+                                            break
+                                        end
+                                    end
+                                    if targetUUID then break end
+                                    current = current.Parent -- Naik 1 level
+                                end
                             end
+                            if targetUUID then break end -- Berhenti mencari jika sudah dapat 1 Barcode
+                        end
+
+                        -- 🚀 TAHAP 2: PENYERBUAN SERVER
+                        if targetUUID then
+                            namaSultanTerakhir = "MERETAS BARCODE TOTEM..."
+                            updateDashboard()
                             
+                            -- Tembakkan UUID hasil curian ke semua lubang Equip server!
                             for _, r in ipairs(net:GetChildren()) do
                                 local rName = string.lower(r.Name)
-                                -- Hindari menembak remote jual/buang agar aman
                                 if not string.find(rName, "sell") and not string.find(rName, "drop") and not string.find(rName, "delete") then
-                                    if r:IsA("RemoteFunction") or r:IsA("RemoteEvent") then
+                                    if r:IsA("RemoteEvent") or r:IsA("RemoteFunction") then
                                         local fire = r:IsA("RemoteFunction") and r.InvokeServer or r.FireServer
-                                        
-                                        -- Tembak jika nama remote-nya ada unsur equip/use/item
                                         if string.find(rName, "equip") or string.find(rName, "use") or string.find(rName, "item") then
-                                            task.spawn(function() pcall(function() fire(r, "Luck Totem") end) end)
-                                            task.spawn(function() pcall(function() fire(r, "luck_totem") end) end)
-                                            if totemID then
-                                                task.spawn(function() pcall(function() fire(r, totemID) end) end)
-                                                task.spawn(function() pcall(function() fire(r, tostring(totemID)) end) end)
-                                            end
+                                            task.spawn(function() pcall(function() fire(r, targetUUID) end) end)
                                         end
-                                        
-                                        -- Tembakan Khusus: Jika dev menggunakan argumen ke-1 sebagai perintah utama
-                                        task.spawn(function() pcall(function() fire(r, "Equip", "Luck Totem") end) end)
                                     end
                                 end
                             end
                             
-                            task.wait(2) -- Beri nafas server untuk mengirimkan item 3D-nya
+                            task.wait(2) -- Beri waktu 2 detik agar server mengirimkan wujud fisiknya ke tangan karakter
                             
-                            -- Tangkap item yang baru saja dikirim server
-                            totemTool = char:FindFirstChild("Luck Totem") or LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
-                            if not totemTool then
-                                for _, v in ipairs(char:GetChildren()) do if v:IsA("Tool") and string.find(string.lower(v.Name), "totem") then totemTool = v; break end end
-                            end
-                        end
-                        
-                        -- 3. Eksekusi Penancapan
-                        if totemTool then
-                            namaSultanTerakhir = "MENANCAPKAN TOTEM..."
-                            updateDashboard()
-                            
-                            hum:EquipTool(totemTool)
-                            task.wait(1)
-                            
-                            -- Spam klik brutal untuk menembus emulator Redfinger
-                            for i = 1, 5 do
-                                pcall(function() totemTool:Activate() end)
-                                pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(0, 0)) end)
-                                task.wait(0.5)
+                            -- 🔨 TAHAP 3: TANGKAP DAN TANCAPKAN
+                            local totemTool = char:FindFirstChildOfClass("Tool")
+                            if not (totemTool and string.find(string.lower(totemTool.Name), "totem")) then
+                                -- Cari di ransel cadangan jika server meleset
+                                totemTool = LocalPlayer:FindFirstChild("Backpack") and LocalPlayer.Backpack:FindFirstChild("Luck Totem")
                             end
                             
-                            task.wait(3) -- Jeda emas agar animasi totem selesai dan diakui server
-                            
-                            -- Kembalikan Pancingan ke Slot 1
-                            for _, r in ipairs(net:GetChildren()) do
-                                if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}fwmr")) then
-                                    pcall(function() r:FireServer(1) end) 
-                                    pcall(function() r:FireServer("1") end)
+                            if totemTool then
+                                namaSultanTerakhir = "MENANCAPKAN TOTEM..."
+                                updateDashboard()
+                                
+                                hum:EquipTool(totemTool)
+                                task.wait(1)
+                                
+                                -- Spam klik brutal
+                                for i = 1, 5 do
+                                    pcall(function() totemTool:Activate() end)
+                                    pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton1(Vector2.new(0, 0)) end)
+                                    task.wait(0.5)
                                 end
+                                
+                                task.wait(3) -- Jeda animasi totem
+                                
+                                -- Kembalikan ke pancingan slot 1
+                                for _, r in ipairs(net:GetChildren()) do
+                                    if r:IsA("RemoteEvent") and (string.find(string.lower(r.Name), "equip") or string.find(r.Name, "}fwmr")) then
+                                        pcall(function() r:FireServer(1) end) 
+                                        pcall(function() r:FireServer("1") end)
+                                    end
+                                end
+                                
+                                lastTotemPlace = os.time()
+                                namaSultanTerakhir = "TOTEM SUKSES!"
+                                updateDashboard()
+                            else
+                                namaSultanTerakhir = "GAGAL: FISIK DITAHAN SERVER"
+                                updateDashboard()
+                                lastTotemPlace = os.time()
                             end
-                            
-                            lastTotemPlace = os.time()
-                            namaSultanTerakhir = "TOTEM SUKSES!"
-                            updateDashboard()
                         else
-                            namaSultanTerakhir = "GAGAL: ID TOTEM DIBLOKIR"
+                            namaSultanTerakhir = "GAGAL: BARCODE UI TIDAK KETEMU"
                             updateDashboard()
-                            lastTotemPlace = os.time() 
+                            lastTotemPlace = os.time()
                         end
                     end
                 end
